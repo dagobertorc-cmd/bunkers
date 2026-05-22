@@ -139,14 +139,13 @@ export default function InventarioCREARH() {
             <div className="card p-0 overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-emerald-50 border-b border-emerald-100">
-                  <tr>{['Código','Producto','Categoría','Marca / Modelo','Cantidad','Mín','Máx','Ubicación', isAdmin() ? 'Acciones' : ''].filter(Boolean).map(h =>
+                  <tr>{['Producto','Categoría','Marca / Modelo','Cantidad','Mín','Máx','Ubicación', isAdmin() ? 'Acciones' : ''].filter(Boolean).map(h =>
                     <th key={h} className="text-left px-4 py-3 font-medium text-gray-600 whitespace-nowrap">{h}</th>
                   )}</tr>
                 </thead>
                 <tbody>
                   {data.map(i => (
                     <tr key={i.id} className={`border-b border-gray-100 hover:bg-gray-50 ${i.cantidad <= i.stock_minimo ? 'bg-red-50/40' : ''}`}>
-                      <td className="px-4 py-3 font-mono text-xs text-emerald-700">{i.codigo}</td>
                       <td className="px-4 py-3 font-medium">{i.producto}</td>
                       <td className="px-4 py-3 text-gray-500">{i.categoria}</td>
                       <td className="px-4 py-3 text-gray-500 text-xs">{[i.marca, i.modelo].filter(Boolean).join(' ')}</td>
@@ -172,7 +171,7 @@ export default function InventarioCREARH() {
                     </tr>
                   ))}
                   {data.length === 0 && (
-                    <tr><td colSpan={9} className="text-center py-8 text-gray-400">Sin resultados</td></tr>
+                    <tr><td colSpan={8} className="text-center py-8 text-gray-400">Sin resultados</td></tr>
                   )}
                 </tbody>
               </table>

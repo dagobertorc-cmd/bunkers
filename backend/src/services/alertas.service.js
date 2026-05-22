@@ -42,7 +42,7 @@ const listar = ({ leida, page, limit, offset }) => {
 
   const data = db.prepare(`
     SELECT a.*, i.cantidad, i.stock_minimo,
-           p.nombre AS producto, p.codigo,
+           p.nombre AS producto,
            b.nombre AS bunker
     FROM alertas_stock a
     JOIN inventario i ON a.inventario_id = i.id

@@ -113,7 +113,7 @@ const listar = async (filtros) => {
 
   const data = db.prepare(`
     SELECT m.id, m.folio, tm.nombre AS tipo_movimiento,
-           b.nombre AS bunker, p.nombre AS producto, p.codigo,
+           b.nombre AS bunker, p.nombre AS producto,
            m.cantidad, u.nombre AS ingeniero,
            t.nombre AS tienda_destino, bd.nombre AS bunker_destino,
            tk.numero AS ticket,

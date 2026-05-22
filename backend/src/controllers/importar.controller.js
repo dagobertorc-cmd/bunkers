@@ -59,11 +59,6 @@ const importarXlsx = (req, res, next) => {
         g.condiciones.add(String(condicion).trim());
     }
 
-    // Find max code
-    const prefix = `BNK${String(bunkerId).padStart(2,'0')}-`;
-    const maxRow = db.prepare(`SELECT MAX(CAST(SUBSTR(codigo,${prefix.length+1}) AS INTEGER)) as m FROM productos WHERE codigo LIKE '${prefix}%'`).get();
-    let counter  = (maxRow?.m ?? 0) + 1;
-
     let productosCreados = 0, inventarioActualizado = 0;
 
     const tx = db.transaction(() => {
@@ -82,11 +77,10 @@ const importarXlsx = (req, res, next) => {
         `).get(g.nombre, g.fabricante ?? '', g.modelo ?? '');
 
         if (!prod) {
-          const codigo = `${prefix}${String(counter++).padStart(3,'0')}`;
           const r = db.prepare(`
-            INSERT INTO productos (codigo,nombre,descripcion,categoria_id,unidad_medida,marca,modelo)
-            VALUES (?,?,?,?,?,?,?)
-          `).run(codigo, g.nombre, g.descripcion, cat.id, g.unidad, g.fabricante, g.modelo);
+            INSERT INTO productos (nombre,descripcion,categoria_id,unidad_medida,marca,modelo)
+            VALUES (?,?,?,?,?,?)
+          `).run(g.nombre, g.descripcion, cat.id, g.unidad, g.fabricante, g.modelo);
           prod = { id: r.lastInsertRowid };
           productosCreados++;
         }

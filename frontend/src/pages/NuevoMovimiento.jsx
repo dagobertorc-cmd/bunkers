@@ -33,7 +33,6 @@ function ProductoCombobox({ productos, value, onChange, disabled }) {
     const q = query.toLowerCase();
     return (
       p.producto.toLowerCase().includes(q) ||
-      p.codigo.toLowerCase().includes(q)   ||
       (p.marca  || '').toLowerCase().includes(q) ||
       (p.modelo || '').toLowerCase().includes(q)
     );
@@ -67,7 +66,6 @@ function ProductoCombobox({ productos, value, onChange, disabled }) {
           /* Selected state */
           <div className="flex items-center justify-between w-full px-3 py-2">
             <div className="flex items-center gap-2 min-w-0">
-              <span className="font-mono text-xs text-blue-600 flex-shrink-0">{selected.codigo}</span>
               <span className="truncate text-sm">{selected.producto}</span>
               <span className={`text-xs font-semibold flex-shrink-0 ${stockColor(selected)}`}>
                 ({selected.cantidad} {selected.unidad_medida})
@@ -110,7 +108,6 @@ function ProductoCombobox({ productos, value, onChange, disabled }) {
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs text-blue-600">{p.codigo}</span>
                     <span className="text-sm font-medium truncate">{p.producto}</span>
                   </div>
                   {(p.marca || p.modelo) && (

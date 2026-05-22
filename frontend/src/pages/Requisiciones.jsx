@@ -88,7 +88,7 @@ function DetalleModal({ id, onClose, onUpdated }) {
         <table className="w-full text-sm">
           <thead className="bg-gray-50">
             <tr>
-              {['Producto','Código','Pedido','Stock CREARH', canAtender && isEditable ? 'Surtido' : 'Surtido'].map(h =>
+              {['Producto','Pedido','Stock CREARH', canAtender && isEditable ? 'Surtido' : 'Surtido'].map(h =>
                 <th key={h} className="text-left px-3 py-2 font-medium text-gray-600 whitespace-nowrap">{h}</th>
               )}
             </tr>
@@ -97,7 +97,6 @@ function DetalleModal({ id, onClose, onUpdated }) {
             {req.items.map(item => (
               <tr key={item.id} className="border-t border-gray-100">
                 <td className="px-3 py-2">{item.producto}<br/><span className="text-xs text-gray-400">{item.marca} {item.modelo}</span></td>
-                <td className="px-3 py-2 font-mono text-xs text-blue-600">{item.codigo}</td>
                 <td className="px-3 py-2 font-bold">{item.cantidad_pedida} {item.unidad_medida}</td>
                 <td className={`px-3 py-2 font-medium ${item.stock_crearh === 0 ? 'text-red-600' : item.stock_crearh < item.cantidad_pedida ? 'text-yellow-600' : 'text-green-600'}`}>
                   {item.stock_crearh}

@@ -63,7 +63,7 @@ const obtener = (id) => {
 
   req.items = db.prepare(`
     SELECT ri.id, ri.cantidad_pedida, ri.cantidad_surtida, ri.observaciones,
-           p.id AS producto_id, p.codigo, p.nombre AS producto, p.unidad_medida, p.marca, p.modelo,
+           p.id AS producto_id, p.nombre AS producto, p.unidad_medida, p.marca, p.modelo,
            c.nombre AS categoria,
            COALESCE(inv.cantidad, 0) AS stock_crearh
     FROM requisicion_items ri

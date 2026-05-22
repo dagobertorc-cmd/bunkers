@@ -74,7 +74,6 @@ CREATE TABLE IF NOT EXISTS categorias_productos (
 
 CREATE TABLE IF NOT EXISTS productos (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,
-  codigo        VARCHAR(50)  NOT NULL UNIQUE,
   nombre        VARCHAR(200) NOT NULL,
   descripcion   TEXT,
   categoria_id  INTEGER      NOT NULL REFERENCES categorias_productos(id),
@@ -86,7 +85,6 @@ CREATE TABLE IF NOT EXISTS productos (
   created_at    DATETIME     DEFAULT CURRENT_TIMESTAMP,
   updated_at    DATETIME     DEFAULT CURRENT_TIMESTAMP
 );
-CREATE INDEX IF NOT EXISTS idx_productos_codigo    ON productos(codigo);
 CREATE INDEX IF NOT EXISTS idx_productos_categoria ON productos(categoria_id);
 CREATE INDEX IF NOT EXISTS idx_productos_nombre    ON productos(nombre);
 

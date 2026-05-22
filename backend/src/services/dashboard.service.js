@@ -28,13 +28,13 @@ const consumoPorBunker = () => {
 const topProductos = (limit = 10) => {
   const db = getDB();
   return db.prepare(`
-    SELECT p.codigo, p.nombre AS producto,
+    SELECT p.id, p.nombre AS producto,
            SUM(m.cantidad) AS total_salidas
     FROM movimientos m
     JOIN productos p ON m.producto_id = p.id
     JOIN tipos_movimiento tm ON m.tipo_movimiento_id = tm.id
     WHERE tm.nombre = 'SALIDA'
-    GROUP BY p.id, p.codigo, p.nombre
+    GROUP BY p.id, p.nombre
     ORDER BY total_salidas DESC
     LIMIT ?
   `).all(limit);

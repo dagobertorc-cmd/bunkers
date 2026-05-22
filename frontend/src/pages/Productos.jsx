@@ -13,7 +13,7 @@ const UNIDADES = ['PZA','KG','LT','MT','CAJA','JGO','ROLLO','PIEZA'];
 
 function ProductoForm({ initial = {}, categorias, onSave, onClose }) {
   const [form, setForm] = useState({
-    codigo: '', nombre: '', descripcion: '', categoria_id: '',
+    nombre: '', descripcion: '', categoria_id: '',
     unidad_medida: 'PZA', marca: '', modelo: '', num_parte: '',
     ...initial,
   });
@@ -38,10 +38,6 @@ function ProductoForm({ initial = {}, categorias, onSave, onClose }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Código *</label>
-          <input className="input-field" required value={form.codigo} onChange={set('codigo')} />
-        </div>
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">Categoría *</label>
           <select className="input-field" required value={form.categoria_id} onChange={set('categoria_id')}>
@@ -164,14 +160,13 @@ export default function Productos() {
         <div className="card p-0 overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>{['Código','Nombre','Categoría','Marca','Modelo','Unidad','Acciones'].map(h =>
+              <tr>{['Nombre','Categoría','Marca','Modelo','Unidad','Acciones'].map(h =>
                 <th key={h} className="text-left px-4 py-3 font-medium text-gray-600 whitespace-nowrap">{h}</th>
               )}</tr>
             </thead>
             <tbody>
               {data.map(p => (
                 <tr key={p.id} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="px-4 py-3 font-mono text-xs text-blue-600">{p.codigo}</td>
                   <td className="px-4 py-3 font-medium">{p.nombre}</td>
                   <td className="px-4 py-3 text-gray-500">{p.categoria}</td>
                   <td className="px-4 py-3 text-gray-500">{p.marca ?? '—'}</td>
@@ -194,7 +189,7 @@ export default function Productos() {
                   </td>
                 </tr>
               ))}
-              {data.length === 0 && <tr><td colSpan={7} className="text-center py-8 text-gray-400">Sin productos</td></tr>}
+              {data.length === 0 && <tr><td colSpan={6} className="text-center py-8 text-gray-400">Sin productos</td></tr>}
             </tbody>
           </table>
           <div className="px-4 pb-4">

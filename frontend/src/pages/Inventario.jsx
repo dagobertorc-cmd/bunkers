@@ -104,7 +104,7 @@ export default function Inventario() {
         <div className="card p-0 overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>{['Bunker','Código','Producto','Categoría','Cantidad','Mín','Máx','Ubicación','Acciones'].map(h =>
+              <tr>{['Bunker','Producto','Categoría','Cantidad','Mín','Máx','Ubicación','Acciones'].map(h =>
                 <th key={h} className="text-left px-4 py-3 font-medium text-gray-600 whitespace-nowrap">{h}</th>
               )}</tr>
             </thead>
@@ -112,7 +112,6 @@ export default function Inventario() {
               {data.map(i => (
                 <tr key={i.id} className={`border-b border-gray-100 hover:bg-gray-50 ${i.cantidad <= i.stock_minimo ? 'bg-red-50/50' : ''}`}>
                   <td className="px-4 py-3 whitespace-nowrap">{i.bunker}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-blue-600">{i.codigo}</td>
                   <td className="px-4 py-3">{i.producto}</td>
                   <td className="px-4 py-3 text-gray-500">{i.categoria}</td>
                   <td className={`px-4 py-3 font-bold flex items-center gap-1 ${
@@ -133,7 +132,7 @@ export default function Inventario() {
                   </td>
                 </tr>
               ))}
-              {data.length === 0 && <tr><td colSpan={9} className="text-center py-8 text-gray-400">Sin resultados</td></tr>}
+              {data.length === 0 && <tr><td colSpan={8} className="text-center py-8 text-gray-400">Sin resultados</td></tr>}
             </tbody>
           </table>
           <div className="px-4 pb-4">

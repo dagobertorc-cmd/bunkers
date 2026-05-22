@@ -16,7 +16,7 @@ const listar = (filtros = {}) => {
 
   const data = db.prepare(`
     SELECT i.id, i.cantidad, i.stock_minimo, i.stock_maximo, i.ubicacion, i.updated_at,
-           p.id AS producto_id, p.codigo, p.nombre AS producto, p.unidad_medida,
+           p.id AS producto_id, p.nombre AS producto, p.unidad_medida,
            c.nombre AS categoria,
            b.id AS bunker_id, b.nombre AS bunker
     FROM inventario i
@@ -44,7 +44,7 @@ const critico = (bunkerId) => {
 
   return db.prepare(`
     SELECT i.id, i.cantidad, i.stock_minimo,
-           p.codigo, p.nombre AS producto, p.unidad_medida,
+           p.nombre AS producto, p.unidad_medida,
            b.nombre AS bunker
     FROM inventario i
     JOIN productos p ON i.producto_id = p.id
@@ -71,15 +71,15 @@ const crearh = (filtros = {}) => {
 
   if (filtros.categoria_id) { conds.push('p.categoria_id = ?'); params.push(filtros.categoria_id); }
   if (filtros.buscar) {
-    conds.push('(LOWER(p.nombre) LIKE LOWER(?) OR LOWER(p.codigo) LIKE LOWER(?))');
-    params.push(`%${filtros.buscar}%`, `%${filtros.buscar}%`);
+    conds.push('LOWER(p.nombre) LIKE LOWER(?)');
+    params.push(`%${filtros.buscar}%`);
   }
 
   const where = conds.join(' AND ');
 
   const data = db.prepare(`
     SELECT i.id, i.cantidad, i.stock_minimo, i.stock_maximo, i.ubicacion, i.updated_at,
-           p.id AS producto_id, p.codigo, p.nombre AS producto, p.unidad_medida, p.marca, p.modelo,
+           p.id AS producto_id, p.nombre AS producto, p.unidad_medida, p.marca, p.modelo,
            c.nombre AS categoria,
            b.id AS bunker_id, b.nombre AS bunker
     FROM inventario i

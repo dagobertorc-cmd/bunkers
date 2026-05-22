@@ -7,10 +7,10 @@ const listar = (req, res, next) => {
     const db = getDB();
     const { page, limit, offset } = paginate(req.query.page, req.query.limit);
     const cond   = req.query.categoria_id ? 'AND p.categoria_id = ?' : '';
-    const search = req.query.q ? `AND (p.nombre LIKE ? OR p.codigo LIKE ?)` : '';
+    const search = req.query.q ? `AND p.nombre LIKE ?` : '';
     const params = [];
     if (req.query.categoria_id) params.push(req.query.categoria_id);
-    if (req.query.q) { params.push(`%${req.query.q}%`); params.push(`%${req.query.q}%`); }
+    if (req.query.q) { params.push(`%${req.query.q}%`); }
 
     const data = db.prepare(`
       SELECT p.*, c.nombre AS categoria FROM productos p
@@ -44,11 +44,11 @@ const obtener = (req, res, next) => {
 const crear = (req, res, next) => {
   try {
     const db = getDB();
-    const { codigo, nombre, descripcion, categoria_id, unidad_medida, marca, modelo, num_parte } = req.body;
+    const { nombre, descripcion, categoria_id, unidad_medida, marca, modelo, num_parte } = req.body;
     const result = db.prepare(`
-      INSERT INTO productos (codigo, nombre, descripcion, categoria_id, unidad_medida, marca, modelo, num_parte)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(codigo, nombre, descripcion || null, categoria_id, unidad_medida || 'PZA',
+      INSERT INTO productos (nombre, descripcion, categoria_id, unidad_medida, marca, modelo, num_parte)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(nombre, descripcion || null, categoria_id, unidad_medida || 'PZA',
            marca || null, modelo || null, num_parte || null);
     return created(res, { id: result.lastInsertRowid }, 'Producto creado');
   } catch (err) { next(err); }
@@ -57,11 +57,11 @@ const crear = (req, res, next) => {
 const actualizar = (req, res, next) => {
   try {
     const db = getDB();
-    const { codigo, nombre, descripcion, categoria_id, unidad_medida, marca, modelo, num_parte, activo } = req.body;
+    const { nombre, descripcion, categoria_id, unidad_medida, marca, modelo, num_parte, activo } = req.body;
     db.prepare(`
-      UPDATE productos SET codigo=?, nombre=?, descripcion=?, categoria_id=?, unidad_medida=?,
+      UPDATE productos SET nombre=?, descripcion=?, categoria_id=?, unidad_medida=?,
       marca=?, modelo=?, num_parte=?, activo=?, updated_at=CURRENT_TIMESTAMP WHERE id=?
-    `).run(codigo, nombre, descripcion || null, categoria_id, unidad_medida || 'PZA',
+    `).run(nombre, descripcion || null, categoria_id, unidad_medida || 'PZA',
            marca || null, modelo || null, num_parte || null, activo ?? 1, req.params.id);
     return ok(res, null, 'Producto actualizado');
   } catch (err) { next(err); }

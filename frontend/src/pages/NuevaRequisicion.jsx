@@ -46,7 +46,6 @@ function ProductoPicker({ onAdd, addedIds }) {
               <div key={p.producto_id} className="flex items-center justify-between px-3 py-2 hover:bg-gray-50">
                 <div className="text-sm">
                   <span className="font-medium">{p.producto}</span>
-                  <span className="text-gray-400 ml-2 text-xs">{p.codigo}</span>
                   {p.marca && <span className="text-gray-400 ml-2 text-xs">{p.marca} {p.modelo}</span>}
                   <span className={`ml-2 text-xs font-medium ${p.cantidad === 0 ? 'text-red-600' : 'text-green-600'}`}>
                     Stock: {p.cantidad} {p.unidad_medida}
@@ -101,7 +100,6 @@ export default function NuevaRequisicion() {
   const handleAdd = (producto) => {
     setItems(prev => [...prev, {
       producto_id:     producto.producto_id,
-      codigo:          producto.codigo,
       producto:        producto.producto,
       unidad_medida:   producto.unidad_medida,
       marca:           producto.marca,
@@ -198,7 +196,7 @@ export default function NuevaRequisicion() {
             <div className="overflow-x-auto rounded-lg border border-gray-200">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50">
-                  <tr>{['Producto','Código','Stock CREARH','Cantidad *','Notas',''].map(h =>
+                  <tr>{['Producto','Stock CREARH','Cantidad *','Notas',''].map(h =>
                     <th key={h} className="text-left px-3 py-2 font-medium text-gray-600 whitespace-nowrap">{h}</th>
                   )}</tr>
                 </thead>
@@ -211,7 +209,6 @@ export default function NuevaRequisicion() {
                           <><br /><span className="text-xs text-gray-400">{item.marca} {item.modelo}</span></>
                         )}
                       </td>
-                      <td className="px-3 py-2 font-mono text-xs text-blue-600">{item.codigo}</td>
                       <td className={`px-3 py-2 font-medium text-xs ${item.stock_crearh === 0 ? 'text-red-600' : 'text-green-600'}`}>
                         {item.stock_crearh} {item.unidad_medida}
                       </td>
