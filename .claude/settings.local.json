@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(xcode-select -p)",
+      "Read(//usr/local/bin/**)",
+      "Read(//Users/jrodriguezc/.nvm/versions/node/**)",
+      "Read(//opt/homebrew/bin/**)",
+      "Bash(brew list *)",
+      "Bash(curl -s -X POST http://localhost:3001/api/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"admin@bunkers.local\",\"password\":\"Admin2024!\"}')",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl -s http://localhost:5174)",
+      "Bash(curl -s -X POST http://localhost:3001/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"admin@bunkers.local\",\"password\":\"Admin2024!\"}')",
+      "Bash(python3 -c ' *)",
+      "Bash(curl *)",
+      "Bash(python3 -c \"import sys,json; [print\\(f\\\\\"  {f['nombre']}\\\\\"\\) for f in json.load\\(sys.stdin\\)['data']]\")",
+      "Bash(python3 -c \"import sys,json; print\\(' ', len\\(json.load\\(sys.stdin\\)['data']\\), 'tiendas activas'\\)\")",
+      "Bash(python3 *)",
+      "Bash(pip3 install *)",
+      "Bash(node server.js)",
+      "Bash(echo \"Backend PID: $!\")",
+      "Bash(npm rebuild *)",
+      "Bash(nvm list *)",
+      "Bash(node -e \"process.arch\")",
+      "Bash(open *)",
+      "Bash(npm --version)"
+    ]
+  }
+}

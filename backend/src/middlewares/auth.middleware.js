@@ -1,0 +1,31 @@
+const { verify } = require('../utils/jwt.utils');
+
+const verifyToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ success: false, message: 'Token requerido' });
+  }
+
+  try {
+    req.user = verify(token);
+    next();
+  } catch {
+    return res.status(403).json({ success: false, message: 'Token inválido o expirado' });
+  }
+};
+
+const requireRoles = (...roles) => (req, res, next) => {
+  if (!req.user) return res.status(401).json({ success: false, message: 'Sin autenticación' });
+
+  if (!roles.includes(req.user.rol)) {
+    return res.status(403).json({
+      success: false,
+      message: `Acceso denegado. Roles permitidos: ${roles.join(', ')}`,
+    });
+  }
+  next();
+};
+
+module.exports = { verifyToken, requireRoles };
