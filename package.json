@@ -7,6 +7,6 @@
     "build": "npm run build --prefix frontend"
   },
   "devDependencies": {
-    "concurrently": "^8.0.0"
+    "concurrently": "^8.2.2"
   }
 }

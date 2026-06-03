@@ -1,218 +1,261 @@
--- Bunkers de Refacciones — Schema
--- Compatible: SQLite 3 (dev) / MySQL 8 (prod)
-
-PRAGMA foreign_keys = ON;
+-- Bunkers de Refacciones — Schema MySQL 8
 
 CREATE TABLE IF NOT EXISTS roles (
-  id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  nombre      VARCHAR(50)  NOT NULL UNIQUE,
-  permisos    TEXT         NOT NULL DEFAULT '{}',
+  id          INT           NOT NULL AUTO_INCREMENT,
+  nombre      VARCHAR(50)   NOT NULL,
+  permisos    VARCHAR(2000) NOT NULL DEFAULT '{}',
   descripcion VARCHAR(255),
-  created_at  DATETIME     DEFAULT CURRENT_TIMESTAMP
-);
-CREATE INDEX IF NOT EXISTS idx_roles_nombre ON roles(nombre);
+  created_at  DATETIME      DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_roles_nombre (nombre)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS tipos_movimiento (
-  id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  nombre      VARCHAR(50)  NOT NULL UNIQUE,
+  id          INT         NOT NULL AUTO_INCREMENT,
+  nombre      VARCHAR(50) NOT NULL,
   descripcion VARCHAR(255),
-  activo      BOOLEAN      DEFAULT 1
-);
+  activo      TINYINT(1)  DEFAULT 1,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_tipos_mov_nombre (nombre)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS formatos (
+  id          INT         NOT NULL AUTO_INCREMENT,
+  nombre      VARCHAR(50) NOT NULL,
+  descripcion VARCHAR(255),
+  activo      TINYINT(1)  DEFAULT 1,
+  created_at  DATETIME    DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_formatos_nombre (nombre)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS bunkers (
-  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  id          INT          NOT NULL AUTO_INCREMENT,
   nombre      VARCHAR(100) NOT NULL,
   ciudad      VARCHAR(100) NOT NULL,
   direccion   TEXT,
   responsable VARCHAR(150),
   telefono    VARCHAR(20),
-  activo      BOOLEAN      DEFAULT 1,
-  es_crearh   BOOLEAN      DEFAULT 0,
+  activo      TINYINT(1)   DEFAULT 1,
+  es_crearh   TINYINT(1)   DEFAULT 0,
   created_at  DATETIME     DEFAULT CURRENT_TIMESTAMP,
-  updated_at  DATETIME     DEFAULT CURRENT_TIMESTAMP
-);
-CREATE INDEX IF NOT EXISTS idx_bunkers_ciudad ON bunkers(ciudad);
+  updated_at  DATETIME     DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_bunkers_ciudad (ciudad)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS tiendas (
-  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  id         INT          NOT NULL AUTO_INCREMENT,
   nombre     VARCHAR(150) NOT NULL,
-  numero     VARCHAR(20)  UNIQUE,
+  numero     VARCHAR(20),
   ciudad     VARCHAR(100) NOT NULL,
   direccion  TEXT,
-  bunker_id  INTEGER      NOT NULL REFERENCES bunkers(id) ON DELETE RESTRICT,
-  formato_id INTEGER      REFERENCES formatos(id),
-  activa     BOOLEAN      DEFAULT 1,
-  created_at DATETIME     DEFAULT CURRENT_TIMESTAMP
-);
-CREATE INDEX IF NOT EXISTS idx_tiendas_bunker ON tiendas(bunker_id);
-CREATE INDEX IF NOT EXISTS idx_tiendas_ciudad ON tiendas(ciudad);
+  bunker_id  INT          NOT NULL,
+  formato_id INT,
+  activa     TINYINT(1)   DEFAULT 1,
+  created_at DATETIME     DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_tiendas_numero (numero),
+  KEY idx_tiendas_bunker (bunker_id),
+  KEY idx_tiendas_ciudad (ciudad),
+  CONSTRAINT fk_tiendas_bunker  FOREIGN KEY (bunker_id)  REFERENCES bunkers(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_tiendas_formato FOREIGN KEY (formato_id) REFERENCES formatos(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS usuarios (
-  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  id           INT          NOT NULL AUTO_INCREMENT,
   nombre       VARCHAR(150) NOT NULL,
-  email        VARCHAR(150) NOT NULL UNIQUE,
+  email        VARCHAR(150) NOT NULL,
   password     VARCHAR(255) NOT NULL,
-  rol_id       INTEGER      NOT NULL REFERENCES roles(id),
-  bunker_id    INTEGER      REFERENCES bunkers(id),
+  rol_id       INT          NOT NULL,
+  bunker_id    INT,
   telefono     VARCHAR(20),
-  activo       BOOLEAN      DEFAULT 1,
+  activo       TINYINT(1)   DEFAULT 1,
   ultimo_login DATETIME,
   created_at   DATETIME     DEFAULT CURRENT_TIMESTAMP,
-  updated_at   DATETIME     DEFAULT CURRENT_TIMESTAMP
-);
-CREATE INDEX IF NOT EXISTS idx_usuarios_email  ON usuarios(email);
-CREATE INDEX IF NOT EXISTS idx_usuarios_rol    ON usuarios(rol_id);
-CREATE INDEX IF NOT EXISTS idx_usuarios_bunker ON usuarios(bunker_id);
+  updated_at   DATETIME     DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_usuarios_email (email),
+  KEY idx_usuarios_rol (rol_id),
+  KEY idx_usuarios_bunker (bunker_id),
+  CONSTRAINT fk_usuarios_rol    FOREIGN KEY (rol_id)    REFERENCES roles(id),
+  CONSTRAINT fk_usuarios_bunker FOREIGN KEY (bunker_id) REFERENCES bunkers(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS categorias_productos (
-  id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  nombre      VARCHAR(100) NOT NULL UNIQUE,
+  id          INT          NOT NULL AUTO_INCREMENT,
+  nombre      VARCHAR(100) NOT NULL,
   descripcion VARCHAR(255),
   icono       VARCHAR(50),
-  activo      BOOLEAN DEFAULT 1
-);
+  activo      TINYINT(1)   DEFAULT 1,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_categorias_nombre (nombre)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS productos (
-  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  id            INT          NOT NULL AUTO_INCREMENT,
   nombre        VARCHAR(200) NOT NULL,
   descripcion   TEXT,
-  categoria_id  INTEGER      NOT NULL REFERENCES categorias_productos(id),
+  categoria_id  INT          NOT NULL,
   unidad_medida VARCHAR(30)  DEFAULT 'PZA',
   marca         VARCHAR(100),
   modelo        VARCHAR(100),
   num_parte     VARCHAR(100),
-  activo        BOOLEAN      DEFAULT 1,
+  activo        TINYINT(1)   DEFAULT 1,
   created_at    DATETIME     DEFAULT CURRENT_TIMESTAMP,
-  updated_at    DATETIME     DEFAULT CURRENT_TIMESTAMP
-);
-CREATE INDEX IF NOT EXISTS idx_productos_categoria ON productos(categoria_id);
-CREATE INDEX IF NOT EXISTS idx_productos_nombre    ON productos(nombre);
+  updated_at    DATETIME     DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_productos_categoria (categoria_id),
+  KEY idx_productos_nombre (nombre),
+  CONSTRAINT fk_productos_categoria FOREIGN KEY (categoria_id) REFERENCES categorias_productos(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS inventario (
-  id           INTEGER PRIMARY KEY AUTOINCREMENT,
-  bunker_id    INTEGER NOT NULL REFERENCES bunkers(id)   ON DELETE CASCADE,
-  producto_id  INTEGER NOT NULL REFERENCES productos(id) ON DELETE CASCADE,
-  cantidad     INTEGER NOT NULL DEFAULT 0 CHECK (cantidad >= 0),
-  stock_minimo INTEGER NOT NULL DEFAULT 5,
-  stock_maximo INTEGER,
+  id           INT      NOT NULL AUTO_INCREMENT,
+  bunker_id    INT      NOT NULL,
+  producto_id  INT      NOT NULL,
+  cantidad     INT      NOT NULL DEFAULT 0,
+  stock_minimo INT      NOT NULL DEFAULT 5,
+  stock_maximo INT,
   ubicacion    VARCHAR(100),
   updated_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(bunker_id, producto_id)
-);
-CREATE INDEX IF NOT EXISTS idx_inventario_bunker   ON inventario(bunker_id);
-CREATE INDEX IF NOT EXISTS idx_inventario_producto ON inventario(producto_id);
-CREATE INDEX IF NOT EXISTS idx_inventario_stock    ON inventario(cantidad);
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_inventario_bunker_producto (bunker_id, producto_id),
+  KEY idx_inventario_bunker (bunker_id),
+  KEY idx_inventario_producto (producto_id),
+  KEY idx_inventario_stock (cantidad),
+  CONSTRAINT fk_inv_bunker FOREIGN KEY (bunker_id)   REFERENCES bunkers(id)   ON DELETE CASCADE,
+  CONSTRAINT fk_inv_prod   FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE CASCADE,
+  CHECK (cantidad >= 0)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS tickets (
-  id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  numero      VARCHAR(50)  NOT NULL UNIQUE,
-  descripcion TEXT         NOT NULL,
-  tienda_id   INTEGER      REFERENCES tiendas(id),
-  usuario_id  INTEGER      REFERENCES usuarios(id),
-  estado      VARCHAR(30)  DEFAULT 'ABIERTO',
-  prioridad   VARCHAR(20)  DEFAULT 'MEDIA',
-  created_at  DATETIME     DEFAULT CURRENT_TIMESTAMP,
-  updated_at  DATETIME     DEFAULT CURRENT_TIMESTAMP
-);
-CREATE INDEX IF NOT EXISTS idx_tickets_numero ON tickets(numero);
-CREATE INDEX IF NOT EXISTS idx_tickets_estado ON tickets(estado);
-CREATE INDEX IF NOT EXISTS idx_tickets_tienda ON tickets(tienda_id);
+  id          INT         NOT NULL AUTO_INCREMENT,
+  numero      VARCHAR(50) NOT NULL,
+  descripcion TEXT        NOT NULL,
+  tienda_id   INT,
+  usuario_id  INT,
+  estado      VARCHAR(30) DEFAULT 'ABIERTO',
+  prioridad   VARCHAR(20) DEFAULT 'MEDIA',
+  created_at  DATETIME    DEFAULT CURRENT_TIMESTAMP,
+  updated_at  DATETIME    DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_tickets_numero (numero),
+  KEY idx_tickets_estado (estado),
+  KEY idx_tickets_tienda (tienda_id),
+  CONSTRAINT fk_tickets_tienda  FOREIGN KEY (tienda_id)  REFERENCES tiendas(id),
+  CONSTRAINT fk_tickets_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS movimientos (
-  id                 INTEGER PRIMARY KEY AUTOINCREMENT,
-  folio              VARCHAR(50)  UNIQUE,
-  tipo_movimiento_id INTEGER      NOT NULL REFERENCES tipos_movimiento(id),
-  bunker_id          INTEGER      NOT NULL REFERENCES bunkers(id),
-  tienda_destino_id  INTEGER      REFERENCES tiendas(id),
-  bunker_destino_id  INTEGER      REFERENCES bunkers(id),
-  producto_id        INTEGER      NOT NULL REFERENCES productos(id),
-  cantidad           INTEGER      NOT NULL CHECK (cantidad > 0),
-  usuario_id         INTEGER      NOT NULL REFERENCES usuarios(id),
-  ticket_id          INTEGER      REFERENCES tickets(id),
+  id                 INT          NOT NULL AUTO_INCREMENT,
+  folio              VARCHAR(50),
+  tipo_movimiento_id INT          NOT NULL,
+  bunker_id          INT          NOT NULL,
+  tienda_destino_id  INT,
+  bunker_destino_id  INT,
+  producto_id        INT          NOT NULL,
+  cantidad           INT          NOT NULL,
+  usuario_id         INT          NOT NULL,
+  ticket_id          INT,
   observaciones      TEXT,
   foto_evidencia     VARCHAR(500),
   fecha_hora         DATETIME     DEFAULT CURRENT_TIMESTAMP,
-  created_at         DATETIME     DEFAULT CURRENT_TIMESTAMP
-);
-CREATE INDEX IF NOT EXISTS idx_mov_bunker   ON movimientos(bunker_id);
-CREATE INDEX IF NOT EXISTS idx_mov_producto ON movimientos(producto_id);
-CREATE INDEX IF NOT EXISTS idx_mov_usuario  ON movimientos(usuario_id);
-CREATE INDEX IF NOT EXISTS idx_mov_ticket   ON movimientos(ticket_id);
-CREATE INDEX IF NOT EXISTS idx_mov_fecha    ON movimientos(fecha_hora);
-CREATE INDEX IF NOT EXISTS idx_mov_tipo     ON movimientos(tipo_movimiento_id);
+  created_at         DATETIME     DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_movimientos_folio (folio),
+  KEY idx_mov_bunker (bunker_id),
+  KEY idx_mov_producto (producto_id),
+  KEY idx_mov_usuario (usuario_id),
+  KEY idx_mov_ticket (ticket_id),
+  KEY idx_mov_fecha (fecha_hora),
+  KEY idx_mov_tipo (tipo_movimiento_id),
+  CHECK (cantidad > 0),
+  CONSTRAINT fk_mov_tipo    FOREIGN KEY (tipo_movimiento_id) REFERENCES tipos_movimiento(id),
+  CONSTRAINT fk_mov_bunker  FOREIGN KEY (bunker_id)          REFERENCES bunkers(id),
+  CONSTRAINT fk_mov_tda_dst FOREIGN KEY (tienda_destino_id)  REFERENCES tiendas(id),
+  CONSTRAINT fk_mov_bnk_dst FOREIGN KEY (bunker_destino_id)  REFERENCES bunkers(id),
+  CONSTRAINT fk_mov_prod    FOREIGN KEY (producto_id)        REFERENCES productos(id),
+  CONSTRAINT fk_mov_usr     FOREIGN KEY (usuario_id)         REFERENCES usuarios(id),
+  CONSTRAINT fk_mov_ticket  FOREIGN KEY (ticket_id)          REFERENCES tickets(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS alertas_stock (
-  id            INTEGER PRIMARY KEY AUTOINCREMENT,
-  inventario_id INTEGER     NOT NULL REFERENCES inventario(id) ON DELETE CASCADE,
+  id            INT         NOT NULL AUTO_INCREMENT,
+  inventario_id INT         NOT NULL,
   tipo_alerta   VARCHAR(50) NOT NULL,
   mensaje       TEXT        NOT NULL,
-  leida         BOOLEAN     DEFAULT 0,
-  leida_por     INTEGER     REFERENCES usuarios(id),
+  leida         TINYINT(1)  DEFAULT 0,
+  leida_por     INT,
   leida_at      DATETIME,
-  created_at    DATETIME    DEFAULT CURRENT_TIMESTAMP
-);
-CREATE INDEX IF NOT EXISTS idx_alertas_inventario ON alertas_stock(inventario_id);
-CREATE INDEX IF NOT EXISTS idx_alertas_leida      ON alertas_stock(leida);
-CREATE INDEX IF NOT EXISTS idx_alertas_tipo       ON alertas_stock(tipo_alerta);
+  created_at    DATETIME    DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_alertas_inventario (inventario_id),
+  KEY idx_alertas_leida (leida),
+  KEY idx_alertas_tipo (tipo_alerta),
+  CONSTRAINT fk_alertas_inventario FOREIGN KEY (inventario_id) REFERENCES inventario(id) ON DELETE CASCADE,
+  CONSTRAINT fk_alertas_leida_por  FOREIGN KEY (leida_por)     REFERENCES usuarios(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Serial numbers per inventory item (one row per physical unit)
 CREATE TABLE IF NOT EXISTS seriales (
-  id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  inventario_id INTEGER NOT NULL REFERENCES inventario(id) ON DELETE CASCADE,
-  serie       VARCHAR(100) NOT NULL,
-  condicion   VARCHAR(100) DEFAULT 'Buen estado',
-  activo      BOOLEAN DEFAULT 1,
-  created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-CREATE INDEX IF NOT EXISTS idx_seriales_inventario ON seriales(inventario_id);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_seriales_serie ON seriales(serie) WHERE serie != 'N/A';
+  id            INT          NOT NULL AUTO_INCREMENT,
+  inventario_id INT          NOT NULL,
+  serie         VARCHAR(100) NOT NULL,
+  condicion     VARCHAR(100) DEFAULT 'Buen estado',
+  activo        TINYINT(1)   DEFAULT 1,
+  created_at    DATETIME     DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_seriales_inventario (inventario_id),
+  CONSTRAINT fk_seriales_inventario FOREIGN KEY (inventario_id) REFERENCES inventario(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Formatos de tienda (HEB, MTA, etc.)
-CREATE TABLE IF NOT EXISTS formatos (
-  id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  nombre      VARCHAR(50) NOT NULL UNIQUE,
-  descripcion VARCHAR(255),
-  activo      BOOLEAN DEFAULT 1,
-  created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
--- Ingeniero ↔ Tienda (many-to-many)
 CREATE TABLE IF NOT EXISTS ingeniero_tiendas (
-  id         INTEGER PRIMARY KEY AUTOINCREMENT,
-  usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
-  tienda_id  INTEGER NOT NULL REFERENCES tiendas(id)  ON DELETE CASCADE,
+  id         INT      NOT NULL AUTO_INCREMENT,
+  usuario_id INT      NOT NULL,
+  tienda_id  INT      NOT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(usuario_id, tienda_id)
-);
-CREATE INDEX IF NOT EXISTS idx_ing_tiendas_usuario ON ingeniero_tiendas(usuario_id);
-CREATE INDEX IF NOT EXISTS idx_ing_tiendas_tienda  ON ingeniero_tiendas(tienda_id);
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_ing_tiendas (usuario_id, tienda_id),
+  KEY idx_ing_tiendas_usuario (usuario_id),
+  KEY idx_ing_tiendas_tienda (tienda_id),
+  CONSTRAINT fk_ing_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+  CONSTRAINT fk_ing_tienda  FOREIGN KEY (tienda_id)  REFERENCES tiendas(id)  ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Requisiciones: supply orders from bunkers to CREARH
 CREATE TABLE IF NOT EXISTS requisiciones (
-  id           INTEGER PRIMARY KEY AUTOINCREMENT,
-  folio        VARCHAR(50)  NOT NULL UNIQUE,
-  bunker_id    INTEGER      NOT NULL REFERENCES bunkers(id),
-  usuario_id   INTEGER      NOT NULL REFERENCES usuarios(id),
-  estado       VARCHAR(30)  NOT NULL DEFAULT 'PENDIENTE',
-  observaciones TEXT,
+  id              INT         NOT NULL AUTO_INCREMENT,
+  folio           VARCHAR(50) NOT NULL,
+  bunker_id       INT         NOT NULL,
+  usuario_id      INT         NOT NULL,
+  estado          VARCHAR(30) NOT NULL DEFAULT 'PENDIENTE',
+  observaciones   TEXT,
   fecha_requerida DATE,
-  atendida_por INTEGER      REFERENCES usuarios(id),
-  atendida_at  DATETIME,
-  created_at   DATETIME     DEFAULT CURRENT_TIMESTAMP,
-  updated_at   DATETIME     DEFAULT CURRENT_TIMESTAMP
-);
-CREATE INDEX IF NOT EXISTS idx_req_bunker  ON requisiciones(bunker_id);
-CREATE INDEX IF NOT EXISTS idx_req_estado  ON requisiciones(estado);
-CREATE INDEX IF NOT EXISTS idx_req_usuario ON requisiciones(usuario_id);
+  atendida_por    INT,
+  atendida_at     DATETIME,
+  created_at      DATETIME    DEFAULT CURRENT_TIMESTAMP,
+  updated_at      DATETIME    DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_requisiciones_folio (folio),
+  KEY idx_req_bunker (bunker_id),
+  KEY idx_req_estado (estado),
+  KEY idx_req_usuario (usuario_id),
+  CONSTRAINT fk_req_bunker   FOREIGN KEY (bunker_id)    REFERENCES bunkers(id),
+  CONSTRAINT fk_req_usuario  FOREIGN KEY (usuario_id)   REFERENCES usuarios(id),
+  CONSTRAINT fk_req_atendida FOREIGN KEY (atendida_por) REFERENCES usuarios(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS requisicion_items (
-  id              INTEGER PRIMARY KEY AUTOINCREMENT,
-  requisicion_id  INTEGER NOT NULL REFERENCES requisiciones(id) ON DELETE CASCADE,
-  producto_id     INTEGER NOT NULL REFERENCES productos(id),
-  cantidad_pedida INTEGER NOT NULL CHECK (cantidad_pedida > 0),
-  cantidad_surtida INTEGER DEFAULT 0,
-  observaciones   TEXT,
-  created_at      DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-CREATE INDEX IF NOT EXISTS idx_req_items_req     ON requisicion_items(requisicion_id);
-CREATE INDEX IF NOT EXISTS idx_req_items_producto ON requisicion_items(producto_id);
+  id               INT      NOT NULL AUTO_INCREMENT,
+  requisicion_id   INT      NOT NULL,
+  producto_id      INT      NOT NULL,
+  cantidad_pedida  INT      NOT NULL,
+  cantidad_surtida INT      DEFAULT 0,
+  observaciones    TEXT,
+  created_at       DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_req_items_req (requisicion_id),
+  KEY idx_req_items_producto (producto_id),
+  CHECK (cantidad_pedida > 0),
+  CONSTRAINT fk_req_items_req  FOREIGN KEY (requisicion_id) REFERENCES requisiciones(id) ON DELETE CASCADE,
+  CONSTRAINT fk_req_items_prod FOREIGN KEY (producto_id)    REFERENCES productos(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

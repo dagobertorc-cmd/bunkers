@@ -28,7 +28,12 @@
       "Bash(node -e \"const db = require\\('better-sqlite3'\\)\\('database/bunkers.db'\\); const cols = db.prepare\\('PRAGMA table_info\\(productos\\)'\\).all\\(\\); console.log\\(cols.map\\(c => c.name\\)\\); const idx = db.prepare\\(\\\\\"SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='productos'\\\\\"\\).all\\(\\); console.log\\('Índices:', idx.map\\(i => i.name\\)\\); db.close\\(\\);\")",
       "Bash(node -e \"const db = require\\('better-sqlite3'\\)\\('database/bunkers.db'\\); const u = db.prepare\\('SELECT id, email, password FROM usuarios WHERE email = ?'\\).get\\('admin@bunkers.local'\\); console.log\\(u ? 'usuario existe, hash:' + u.password.substring\\(0,20\\) + '...' : 'NO EXISTE'\\); db.close\\(\\);\")",
       "Bash(node -e \"const bcrypt=require\\('bcryptjs'\\); const hash=require\\('better-sqlite3'\\)\\('database/bunkers.db'\\).prepare\\('SELECT password FROM usuarios WHERE email=?'\\).get\\('admin@bunkers.local'\\).password; console.log\\(bcrypt.compareSync\\('Admin2024!', hash\\)\\);\")",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(node -e \"require\\('mysql2/promise'\\); console.log\\('✅ mysql2 ok'\\)\")",
+      "Bash(node -e \"try { require\\('better-sqlite3'\\); console.log\\('still installed'\\) } catch\\(e\\) { console.log\\('✅ better-sqlite3 removed'\\) }\")",
+      "Bash(node *)",
+      "Bash(mysql --version)",
+      "Bash(brew services *)"
     ]
   }
 }

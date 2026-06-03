@@ -1,11 +1,12 @@
-const { getDB }       = require('../config/database');
+const { getDB }        = require('../config/database');
 const { TIPOS_ALERTA } = require('../config/constants');
 
 const evaluarStock = async (bunkerId, productoId) => {
-  const db  = getDB();
-  const inv = db.prepare(
-    'SELECT id, cantidad, stock_minimo FROM inventario WHERE bunker_id = ? AND producto_id = ?'
-  ).get(bunkerId, productoId);
+  const pool = getDB();
+  const [[inv]] = await pool.execute(
+    'SELECT id, cantidad, stock_minimo FROM inventario WHERE bunker_id = ? AND producto_id = ?',
+    [bunkerId, productoId]
+  );
 
   if (!inv) return;
 
@@ -20,27 +21,27 @@ const evaluarStock = async (bunkerId, productoId) => {
     tipo    = TIPOS_ALERTA.STOCK_MINIMO;
     mensaje = `Stock mínimo alcanzado: ${inv.cantidad} unidades`;
   } else {
-    return; // Stock OK, no alertar
+    return;
   }
 
-  // Solo crear alerta si no hay una no leída del mismo tipo
-  const existing = db.prepare(`
+  const [[existing]] = await pool.execute(`
     SELECT id FROM alertas_stock
     WHERE inventario_id = ? AND tipo_alerta = ? AND leida = 0
-  `).get(inv.id, tipo);
+  `, [inv.id, tipo]);
 
   if (!existing) {
-    db.prepare(
-      'INSERT INTO alertas_stock (inventario_id, tipo_alerta, mensaje) VALUES (?, ?, ?)'
-    ).run(inv.id, tipo, mensaje);
+    await pool.execute(
+      'INSERT INTO alertas_stock (inventario_id, tipo_alerta, mensaje) VALUES (?, ?, ?)',
+      [inv.id, tipo, mensaje]
+    );
   }
 };
 
-const listar = ({ leida, page, limit, offset }) => {
-  const db = getDB();
+const listar = async ({ leida, page, limit, offset }) => {
+  const pool = getDB();
   const conditions = leida !== undefined ? `WHERE a.leida = ${leida ? 1 : 0}` : '';
 
-  const data = db.prepare(`
+  const [data] = await pool.execute(`
     SELECT a.*, i.cantidad, i.stock_minimo,
            p.nombre AS producto,
            b.nombre AS bunker
@@ -51,18 +52,19 @@ const listar = ({ leida, page, limit, offset }) => {
     ${conditions}
     ORDER BY a.created_at DESC
     LIMIT ? OFFSET ?
-  `).all(limit, offset);
+  `, [limit, offset]);
 
-  const total = db.prepare(`SELECT COUNT(*) as c FROM alertas_stock a ${conditions}`).get().c;
-  return { data, total, page, limit, pages: Math.ceil(total / limit) };
+  const [[{ c }]] = await pool.execute(`SELECT COUNT(*) as c FROM alertas_stock a ${conditions}`);
+  return { data, total: Number(c), page, limit, pages: Math.ceil(Number(c) / limit) };
 };
 
-const marcarLeida = (id, userId) => {
-  const db = getDB();
-  db.prepare(`
+const marcarLeida = async (id, userId) => {
+  const pool = getDB();
+  await pool.execute(`
     UPDATE alertas_stock SET leida = 1, leida_por = ?, leida_at = CURRENT_TIMESTAMP WHERE id = ?
-  `).run(userId, id);
-  return db.prepare('SELECT * FROM alertas_stock WHERE id = ?').get(id);
+  `, [userId, id]);
+  const [[row]] = await pool.execute('SELECT * FROM alertas_stock WHERE id = ?', [id]);
+  return row;
 };
 
 module.exports = { evaluarStock, listar, marcarLeida };

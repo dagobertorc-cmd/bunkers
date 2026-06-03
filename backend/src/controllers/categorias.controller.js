@@ -1,39 +1,42 @@
 const { getDB } = require('../config/database');
 const { ok, created } = require('../utils/response.utils');
 
-const listar = (_req, res, next) => {
+const listar = async (_req, res, next) => {
   try {
-    const db   = getDB();
-    const data = db.prepare('SELECT * FROM categorias_productos WHERE activo = 1 ORDER BY nombre').all();
+    const pool = getDB();
+    const [data] = await pool.execute('SELECT * FROM categorias_productos WHERE activo = 1 ORDER BY nombre');
     return ok(res, data);
   } catch (err) { next(err); }
 };
 
-const crear = (req, res, next) => {
+const crear = async (req, res, next) => {
   try {
-    const db = getDB();
+    const pool = getDB();
     const { nombre, descripcion, icono } = req.body;
-    const result = db.prepare(
-      'INSERT INTO categorias_productos (nombre, descripcion, icono) VALUES (?, ?, ?)'
-    ).run(nombre, descripcion || null, icono || null);
-    return created(res, { id: result.lastInsertRowid }, 'Categoría creada');
+    const [result] = await pool.execute(
+      'INSERT INTO categorias_productos (nombre, descripcion, icono) VALUES (?, ?, ?)',
+      [nombre, descripcion || null, icono || null]
+    );
+    return created(res, { id: result.insertId }, 'Categoría creada');
   } catch (err) { next(err); }
 };
 
-const actualizar = (req, res, next) => {
+const actualizar = async (req, res, next) => {
   try {
-    const db = getDB();
+    const pool = getDB();
     const { nombre, descripcion, icono, activo } = req.body;
-    db.prepare('UPDATE categorias_productos SET nombre=?, descripcion=?, icono=?, activo=? WHERE id=?')
-      .run(nombre, descripcion || null, icono || null, activo ?? 1, req.params.id);
+    await pool.execute(
+      'UPDATE categorias_productos SET nombre=?, descripcion=?, icono=?, activo=? WHERE id=?',
+      [nombre, descripcion || null, icono || null, activo ?? 1, req.params.id]
+    );
     return ok(res, null, 'Categoría actualizada');
   } catch (err) { next(err); }
 };
 
-const eliminar = (req, res, next) => {
+const eliminar = async (req, res, next) => {
   try {
-    const db = getDB();
-    db.prepare('UPDATE categorias_productos SET activo = 0 WHERE id = ?').run(req.params.id);
+    const pool = getDB();
+    await pool.execute('UPDATE categorias_productos SET activo = 0 WHERE id = ?', [req.params.id]);
     return ok(res, null, 'Categoría eliminada');
   } catch (err) { next(err); }
 };

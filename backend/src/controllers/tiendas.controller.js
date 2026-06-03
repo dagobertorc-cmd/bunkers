@@ -1,95 +1,99 @@
 const { getDB } = require('../config/database');
 const { ok, created, notFound } = require('../utils/response.utils');
 
-const listar = (req, res, next) => {
+const listar = async (req, res, next) => {
   try {
-    const db = getDB();
+    const pool = getDB();
     const conditions = ['t.activa = 1'];
     const params = [];
     if (req.query.bunker_id)  { conditions.push('t.bunker_id = ?');  params.push(req.query.bunker_id); }
     if (req.query.formato_id) { conditions.push('t.formato_id = ?'); params.push(req.query.formato_id); }
     const where = conditions.join(' AND ');
-    const data = db.prepare(`
+    const [data] = await pool.execute(`
       SELECT t.*, b.nombre AS bunker_nombre, f.nombre AS formato_nombre
       FROM tiendas t
       JOIN bunkers b ON t.bunker_id = b.id
       LEFT JOIN formatos f ON t.formato_id = f.id
       WHERE ${where} ORDER BY t.nombre
-    `).all(params);
+    `, params);
     return ok(res, data);
   } catch (err) { next(err); }
 };
 
-const obtener = (req, res, next) => {
+const obtener = async (req, res, next) => {
   try {
-    const db     = getDB();
-    const tienda = db.prepare('SELECT * FROM tiendas WHERE id = ?').get(req.params.id);
+    const pool = getDB();
+    const [[tienda]] = await pool.execute('SELECT * FROM tiendas WHERE id = ?', [req.params.id]);
     if (!tienda) return notFound(res, 'Tienda no encontrada');
     return ok(res, tienda);
   } catch (err) { next(err); }
 };
 
-const crear = (req, res, next) => {
+const crear = async (req, res, next) => {
   try {
-    const db = getDB();
+    const pool = getDB();
     const { nombre, numero, ciudad, direccion, bunker_id, formato_id } = req.body;
-    const result = db.prepare(
-      'INSERT INTO tiendas (nombre, numero, ciudad, direccion, bunker_id, formato_id) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run(nombre, numero || null, ciudad, direccion || null, bunker_id, formato_id || null);
-    return created(res, { id: result.lastInsertRowid }, 'Tienda creada');
+    const [result] = await pool.execute(
+      'INSERT INTO tiendas (nombre, numero, ciudad, direccion, bunker_id, formato_id) VALUES (?, ?, ?, ?, ?, ?)',
+      [nombre, numero || null, ciudad, direccion || null, bunker_id, formato_id || null]
+    );
+    return created(res, { id: result.insertId }, 'Tienda creada');
   } catch (err) { next(err); }
 };
 
-// GET /api/tiendas/:id/ingenieros
-const ingenieros = (req, res, next) => {
+const ingenieros = async (req, res, next) => {
   try {
-    const db = getDB();
-    const data = db.prepare(`
+    const pool = getDB();
+    const [data] = await pool.execute(`
       SELECT u.id, u.nombre, u.email, r.nombre AS rol
       FROM ingeniero_tiendas it
       JOIN usuarios u ON it.usuario_id = u.id
       JOIN roles r    ON u.rol_id      = r.id
       WHERE it.tienda_id = ?
       ORDER BY u.nombre
-    `).all(req.params.id);
+    `, [req.params.id]);
     return ok(res, data);
   } catch (err) { next(err); }
 };
 
-// POST /api/tiendas/:id/ingenieros  { usuario_id }
-const asignarIngeniero = (req, res, next) => {
+const asignarIngeniero = async (req, res, next) => {
   try {
-    const db = getDB();
-    db.prepare('INSERT OR IGNORE INTO ingeniero_tiendas (usuario_id, tienda_id) VALUES (?, ?)')
-      .run(req.body.usuario_id, req.params.id);
+    const pool = getDB();
+    await pool.execute(
+      'INSERT IGNORE INTO ingeniero_tiendas (usuario_id, tienda_id) VALUES (?, ?)',
+      [req.body.usuario_id, req.params.id]
+    );
     return ok(res, null, 'Ingeniero asignado');
   } catch (err) { next(err); }
 };
 
-// DELETE /api/tiendas/:id/ingenieros/:userId
-const desasignarIngeniero = (req, res, next) => {
+const desasignarIngeniero = async (req, res, next) => {
   try {
-    const db = getDB();
-    db.prepare('DELETE FROM ingeniero_tiendas WHERE tienda_id = ? AND usuario_id = ?')
-      .run(req.params.id, req.params.userId);
+    const pool = getDB();
+    await pool.execute(
+      'DELETE FROM ingeniero_tiendas WHERE tienda_id = ? AND usuario_id = ?',
+      [req.params.id, req.params.userId]
+    );
     return ok(res, null, 'Ingeniero desasignado');
   } catch (err) { next(err); }
 };
 
-const actualizar = (req, res, next) => {
+const actualizar = async (req, res, next) => {
   try {
-    const db = getDB();
+    const pool = getDB();
     const { nombre, numero, ciudad, direccion, bunker_id, activa } = req.body;
-    db.prepare('UPDATE tiendas SET nombre=?, numero=?, ciudad=?, direccion=?, bunker_id=?, activa=? WHERE id=?')
-      .run(nombre, numero || null, ciudad, direccion || null, bunker_id, activa ?? 1, req.params.id);
+    await pool.execute(
+      'UPDATE tiendas SET nombre=?, numero=?, ciudad=?, direccion=?, bunker_id=?, activa=? WHERE id=?',
+      [nombre, numero || null, ciudad, direccion || null, bunker_id, activa ?? 1, req.params.id]
+    );
     return ok(res, null, 'Tienda actualizada');
   } catch (err) { next(err); }
 };
 
-const eliminar = (req, res, next) => {
+const eliminar = async (req, res, next) => {
   try {
-    const db = getDB();
-    db.prepare('UPDATE tiendas SET activa = 0 WHERE id = ?').run(req.params.id);
+    const pool = getDB();
+    await pool.execute('UPDATE tiendas SET activa = 0 WHERE id = ?', [req.params.id]);
     return ok(res, null, 'Tienda desactivada');
   } catch (err) { next(err); }
 };

@@ -10,6 +10,7 @@ Sistema web para la gestión de inventario de refacciones y equipo técnico dist
 |---|---|---|
 | Node.js | 18 o superior (recomendado 20 LTS) | https://nodejs.org |
 | npm | incluido con Node.js | — |
+| MySQL Server | 8.0 o superior | https://dev.mysql.com/downloads/ |
 | Git | cualquier versión reciente | https://git-scm.com |
 
 > **Nota sobre arquitectura (Mac con Apple Silicon):** asegúrate de instalar Node.js nativo para ARM64 (no la versión Rosetta/x86). Puedes verificarlo ejecutando `node -e "console.log(process.arch)"` — debe mostrar `arm64`.
@@ -46,13 +47,27 @@ PORT=3001
 JWT_SECRET=cambia_esto_por_una_cadena_secreta_de_64_caracteres
 JWT_EXPIRES_IN=8h
 FRONTEND_URL=http://localhost:5173
-DB_PATH=./database/bunkers.db
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASS=tu_contraseña_mysql
+DB_NAME=bunkers
 NODE_ENV=development
 ```
 
-> **Importante:** cambia el valor de `JWT_SECRET` por una cadena aleatoria larga antes de usar el sistema en producción.
+> **Importante:** cambia `JWT_SECRET` por una cadena aleatoria larga y ajusta las credenciales de MySQL (`DB_USER`, `DB_PASS`) antes de usar el sistema en producción.
 
-### 4. Inicializar la base de datos
+### 4. Crear la base de datos en MySQL
+
+Antes de inicializar, crea la base de datos en tu servidor MySQL:
+
+```sql
+CREATE DATABASE bunkers CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+Puedes ejecutarlo desde la consola de MySQL o desde cualquier cliente (MySQL Workbench, DBeaver, etc.).
+
+### 5. Inicializar la base de datos
 
 ```bash
 cd backend
@@ -60,9 +75,9 @@ node src/scripts/initDB.js
 cd ..
 ```
 
-Esto crea el archivo SQLite, aplica el esquema y carga los datos iniciales (roles, tipos de movimiento, bunkers base).
+Esto aplica el esquema en MySQL y carga los datos iniciales (roles, tipos de movimiento, bunkers base).
 
-### 5. (Opcional) Importar inventario desde archivos Excel
+### 6. (Opcional) Importar inventario desde archivos Excel
 
 Si cuentas con los archivos `.xlsx` de inventario por bunker en la carpeta `inventory_by_bunker/`:
 
@@ -72,7 +87,7 @@ node src/scripts/importarTodosBunkers.js
 cd ..
 ```
 
-### 6. Iniciar la aplicación en modo desarrollo
+### 7. Iniciar la aplicación en modo desarrollo
 
 Desde la raíz del proyecto:
 
@@ -115,21 +130,17 @@ git clone <url-del-repositorio>
 cd bunkers
 ```
 
-### 3. Instalar dependencias
+### 3. Instalar MySQL Server
+
+Descarga e instala **MySQL 8.0** desde https://dev.mysql.com/downloads/installer/. Durante la instalación configura la contraseña del usuario `root`.
+
+### 4. Instalar dependencias
 
 ```powershell
 npm run install:all
 ```
 
-> **Si el comando falla con error de `better-sqlite3`:** este paquete requiere compilar código nativo. Instala las herramientas de compilación ejecutando el siguiente comando en PowerShell **como Administrador** y luego repite la instalación:
->
-> ```powershell
-> npm install --global windows-build-tools
-> ```
->
-> En versiones recientes de Windows también puedes instalar **Visual Studio Build Tools** desde https://visualstudio.microsoft.com/visual-cpp-build-tools/ seleccionando la carga de trabajo "Desarrollo para escritorio con C++".
-
-### 4. Configurar variables de entorno del backend
+### 5. Configurar variables de entorno del backend
 
 Crea el archivo `backend\.env` (puedes hacerlo con el Bloc de notas o cualquier editor de texto):
 
@@ -138,11 +149,21 @@ PORT=3001
 JWT_SECRET=cambia_esto_por_una_cadena_secreta_de_64_caracteres
 JWT_EXPIRES_IN=8h
 FRONTEND_URL=http://localhost:5173
-DB_PATH=./database/bunkers.db
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASS=tu_contraseña_mysql
+DB_NAME=bunkers
 NODE_ENV=development
 ```
 
-### 5. Inicializar la base de datos
+### 6. Crear la base de datos en MySQL
+
+```sql
+CREATE DATABASE bunkers CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+### 7. Inicializar la base de datos
 
 ```powershell
 cd backend
@@ -150,7 +171,7 @@ node src/scripts/initDB.js
 cd ..
 ```
 
-### 6. (Opcional) Importar inventario desde archivos Excel
+### 8. (Opcional) Importar inventario desde archivos Excel
 
 ```powershell
 cd backend
@@ -158,7 +179,7 @@ node src/scripts/importarTodosBunkers.js
 cd ..
 ```
 
-### 7. Iniciar la aplicación en modo desarrollo
+### 9. Iniciar la aplicación en modo desarrollo
 
 ```powershell
 npm run dev
@@ -179,11 +200,10 @@ Abre `http://localhost:5173` en tu navegador.
 
 ```
 bunkers/
-├── backend/                  # API REST (Node.js + Express + SQLite)
+├── backend/                  # API REST (Node.js + Express + MySQL)
 │   ├── database/
 │   │   ├── schema.sql        # Esquema de la base de datos
-│   │   ├── seed.sql          # Datos iniciales
-│   │   └── bunkers.db        # Archivo SQLite (se genera al inicializar)
+│   │   └── seed.sql          # Datos iniciales
 │   ├── src/
 │   │   ├── config/           # Configuración de base de datos
 │   │   ├── controllers/      # Lógica de cada endpoint
@@ -236,24 +256,24 @@ Ejecutados desde `backend/`:
 | Comando | Descripción |
 |---|---|
 | `node src/scripts/initDB.js` | Inicializa la base de datos (esquema + datos iniciales) |
+| `node src/scripts/migrarDatos.js` | Aplica adiciones al esquema y carga datos reales (formatos, tiendas, usuarios) |
 | `node src/scripts/importarTodosBunkers.js` | Importa inventario desde los archivos Excel de `inventory_by_bunker/` |
 
 ---
 
 ## Solución de problemas frecuentes
 
-**El backend no inicia y muestra error de `better-sqlite3`**
-Esto ocurre cuando el módulo nativo fue compilado para una arquitectura diferente. Solución:
-```bash
-cd backend
-npm rebuild better-sqlite3
+**El backend no inicia y muestra `Access denied for user` o `ECONNREFUSED`**
+El servidor MySQL no está corriendo o las credenciales en `backend/.env` son incorrectas. Verifica que MySQL esté activo y que `DB_HOST`, `DB_USER`, `DB_PASS` y `DB_NAME` sean correctos.
+
+**Error `Unknown database 'bunkers'`**
+La base de datos aún no existe. Ejecútalo en tu cliente MySQL:
+```sql
+CREATE DATABASE bunkers CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
 **Error `EADDRINUSE: address already in use :::3001`**
 El puerto 3001 ya está en uso. Cambia el valor de `PORT` en `backend/.env` o detén el proceso que lo ocupa.
 
 **El frontend carga pero no muestra datos**
-Verifica que el backend esté corriendo en `http://localhost:3001`. Revisa la consola del navegador y los logs del backend.
-
-**En Windows: error durante `npm install` relacionado con `node-gyp`**
-Instala las herramientas de compilación de C++ como se describe en el paso 3 de la instalación en Windows.
+Verifica que el backend esté corriendo en `http://localhost:3001` y que la conexión a MySQL sea exitosa. Revisa la consola del navegador y los logs del backend.

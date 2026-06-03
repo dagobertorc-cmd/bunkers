@@ -2,92 +2,90 @@ const { getDB } = require('../config/database');
 const { ok, created, notFound } = require('../utils/response.utils');
 const { paginate, paginatedResponse } = require('../utils/pagination.utils');
 
-const listar = (req, res, next) => {
+const listar = async (req, res, next) => {
   try {
-    const db = getDB();
+    const pool = getDB();
     const { page, limit, offset } = paginate(req.query.page, req.query.limit);
     const cond   = req.query.categoria_id ? 'AND p.categoria_id = ?' : '';
-    const search = req.query.q ? `AND p.nombre LIKE ?` : '';
+    const search = req.query.q ? 'AND p.nombre LIKE ?' : '';
     const params = [];
     if (req.query.categoria_id) params.push(req.query.categoria_id);
-    if (req.query.q) { params.push(`%${req.query.q}%`); }
+    if (req.query.q) params.push(`%${req.query.q}%`);
 
-    const data = db.prepare(`
+    const [data] = await pool.execute(`
       SELECT p.*, c.nombre AS categoria FROM productos p
       JOIN categorias_productos c ON p.categoria_id = c.id
       WHERE p.activo = 1 ${cond} ${search}
       ORDER BY p.nombre
       LIMIT ? OFFSET ?
-    `).all([...params, limit, offset]);
+    `, [...params, limit, offset]);
 
-    const total = db.prepare(`
+    const [[{ c }]] = await pool.execute(`
       SELECT COUNT(*) as c FROM productos p WHERE p.activo = 1 ${cond} ${search}
-    `).get(params).c;
+    `, params);
 
-    return ok(res, paginatedResponse(data, total, page, limit));
+    return ok(res, paginatedResponse(data, Number(c), page, limit));
   } catch (err) { next(err); }
 };
 
-const obtener = (req, res, next) => {
+const obtener = async (req, res, next) => {
   try {
-    const db  = getDB();
-    const row = db.prepare(`
+    const pool = getDB();
+    const [[row]] = await pool.execute(`
       SELECT p.*, c.nombre AS categoria FROM productos p
       JOIN categorias_productos c ON p.categoria_id = c.id
       WHERE p.id = ?
-    `).get(req.params.id);
+    `, [req.params.id]);
     if (!row) return notFound(res, 'Producto no encontrado');
     return ok(res, row);
   } catch (err) { next(err); }
 };
 
-const crear = (req, res, next) => {
+const crear = async (req, res, next) => {
   try {
-    const db = getDB();
+    const pool = getDB();
     const { nombre, descripcion, categoria_id, unidad_medida, marca, modelo, num_parte } = req.body;
-    const result = db.prepare(`
+    const [result] = await pool.execute(`
       INSERT INTO productos (nombre, descripcion, categoria_id, unidad_medida, marca, modelo, num_parte)
       VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(nombre, descripcion || null, categoria_id, unidad_medida || 'PZA',
-           marca || null, modelo || null, num_parte || null);
-    return created(res, { id: result.lastInsertRowid }, 'Producto creado');
+    `, [nombre, descripcion || null, categoria_id, unidad_medida || 'PZA',
+        marca || null, modelo || null, num_parte || null]);
+    return created(res, { id: result.insertId }, 'Producto creado');
   } catch (err) { next(err); }
 };
 
-const actualizar = (req, res, next) => {
+const actualizar = async (req, res, next) => {
   try {
-    const db = getDB();
+    const pool = getDB();
     const { nombre, descripcion, categoria_id, unidad_medida, marca, modelo, num_parte, activo } = req.body;
-    db.prepare(`
+    await pool.execute(`
       UPDATE productos SET nombre=?, descripcion=?, categoria_id=?, unidad_medida=?,
       marca=?, modelo=?, num_parte=?, activo=?, updated_at=CURRENT_TIMESTAMP WHERE id=?
-    `).run(nombre, descripcion || null, categoria_id, unidad_medida || 'PZA',
-           marca || null, modelo || null, num_parte || null, activo ?? 1, req.params.id);
+    `, [nombre, descripcion || null, categoria_id, unidad_medida || 'PZA',
+        marca || null, modelo || null, num_parte || null, activo ?? 1, req.params.id]);
     return ok(res, null, 'Producto actualizado');
   } catch (err) { next(err); }
 };
 
-const eliminar = (req, res, next) => {
+const eliminar = async (req, res, next) => {
   try {
-    const db = getDB();
-    // Soft-delete: mark inactive
-    db.prepare('UPDATE productos SET activo = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(req.params.id);
+    const pool = getDB();
+    await pool.execute('UPDATE productos SET activo = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [req.params.id]);
     return ok(res, null, 'Producto eliminado');
   } catch (err) { next(err); }
 };
 
-// GET /api/productos/:id/seriales
-const seriales = (req, res, next) => {
+const seriales = async (req, res, next) => {
   try {
-    const db = getDB();
-    const data = db.prepare(`
+    const pool = getDB();
+    const [data] = await pool.execute(`
       SELECT s.*, i.bunker_id, b.nombre AS bunker
       FROM seriales s
       JOIN inventario i ON s.inventario_id = i.id
       JOIN bunkers b    ON i.bunker_id     = b.id
       WHERE i.producto_id = ?
       ORDER BY s.serie
-    `).all(req.params.id);
+    `, [req.params.id]);
     return ok(res, data);
   } catch (err) { next(err); }
 };

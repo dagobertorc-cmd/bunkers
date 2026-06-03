@@ -1,89 +1,90 @@
-const { getDB }       = require('../config/database');
-const alertasService  = require('./alertas.service');
+const { getDB, withTransaction } = require('../config/database');
+const alertasService = require('./alertas.service');
 const { paginate, paginatedResponse } = require('../utils/pagination.utils');
 
 const crear = async (datos) => {
-  const db = getDB();
   const {
     tipo_movimiento_id, bunker_id, tienda_destino_id,
     bunker_destino_id, producto_id, cantidad,
     usuario_id, ticket_id, observaciones, foto_evidencia,
   } = datos;
 
-  const transaction = db.transaction(() => {
-    const tipoMov = db.prepare('SELECT nombre FROM tipos_movimiento WHERE id = ?').get(tipo_movimiento_id);
+  const resultado = await withTransaction(async (conn) => {
+    const [[tipoMov]] = await conn.execute(
+      'SELECT nombre FROM tipos_movimiento WHERE id = ?', [tipo_movimiento_id]
+    );
     if (!tipoMov) throw { type: 'BUSINESS_ERROR', message: 'Tipo de movimiento inválido' };
 
     if (['SALIDA', 'TRASLADO', 'PRESTAMO'].includes(tipoMov.nombre)) {
-      const inv = db.prepare(
-        'SELECT cantidad FROM inventario WHERE bunker_id = ? AND producto_id = ?'
-      ).get(bunker_id, producto_id);
-
+      const [[inv]] = await conn.execute(
+        'SELECT cantidad FROM inventario WHERE bunker_id = ? AND producto_id = ?',
+        [bunker_id, producto_id]
+      );
       if (!inv || inv.cantidad < cantidad) {
         throw {
           type: 'BUSINESS_ERROR',
           message: `Stock insuficiente. Disponible: ${inv?.cantidad || 0}, Solicitado: ${cantidad}`,
         };
       }
-      db.prepare(`
+      await conn.execute(`
         UPDATE inventario SET cantidad = cantidad - ?, updated_at = CURRENT_TIMESTAMP
         WHERE bunker_id = ? AND producto_id = ?
-      `).run(cantidad, bunker_id, producto_id);
+      `, [cantidad, bunker_id, producto_id]);
     }
 
     if (['ENTRADA', 'DEVOLUCION', 'AJUSTE'].includes(tipoMov.nombre)) {
-      const existing = db.prepare(
-        'SELECT id FROM inventario WHERE bunker_id = ? AND producto_id = ?'
-      ).get(bunker_id, producto_id);
-
+      const [[existing]] = await conn.execute(
+        'SELECT id FROM inventario WHERE bunker_id = ? AND producto_id = ?',
+        [bunker_id, producto_id]
+      );
       if (existing) {
-        db.prepare(`
+        await conn.execute(`
           UPDATE inventario SET cantidad = cantidad + ?, updated_at = CURRENT_TIMESTAMP
           WHERE bunker_id = ? AND producto_id = ?
-        `).run(cantidad, bunker_id, producto_id);
+        `, [cantidad, bunker_id, producto_id]);
       } else {
-        db.prepare(
-          'INSERT INTO inventario (bunker_id, producto_id, cantidad, stock_minimo) VALUES (?, ?, ?, 5)'
-        ).run(bunker_id, producto_id, cantidad);
+        await conn.execute(
+          'INSERT INTO inventario (bunker_id, producto_id, cantidad, stock_minimo) VALUES (?, ?, ?, 5)',
+          [bunker_id, producto_id, cantidad]
+        );
       }
     }
 
     if (tipoMov.nombre === 'TRASLADO' && bunker_destino_id) {
-      const existingDest = db.prepare(
-        'SELECT id FROM inventario WHERE bunker_id = ? AND producto_id = ?'
-      ).get(bunker_destino_id, producto_id);
-
+      const [[existingDest]] = await conn.execute(
+        'SELECT id FROM inventario WHERE bunker_id = ? AND producto_id = ?',
+        [bunker_destino_id, producto_id]
+      );
       if (existingDest) {
-        db.prepare(`
+        await conn.execute(`
           UPDATE inventario SET cantidad = cantidad + ?, updated_at = CURRENT_TIMESTAMP
           WHERE bunker_id = ? AND producto_id = ?
-        `).run(cantidad, bunker_destino_id, producto_id);
+        `, [cantidad, bunker_destino_id, producto_id]);
       } else {
-        db.prepare(
-          'INSERT INTO inventario (bunker_id, producto_id, cantidad, stock_minimo) VALUES (?, ?, ?, 5)'
-        ).run(bunker_destino_id, producto_id, cantidad);
+        await conn.execute(
+          'INSERT INTO inventario (bunker_id, producto_id, cantidad, stock_minimo) VALUES (?, ?, ?, 5)',
+          [bunker_destino_id, producto_id, cantidad]
+        );
       }
     }
 
-    const count = db.prepare('SELECT COUNT(*) as c FROM movimientos').get();
-    const folio = `MOV-${Date.now()}-${String(count.c + 1).padStart(5, '0')}`;
+    const [[{ c }]] = await conn.execute('SELECT COUNT(*) as c FROM movimientos');
+    const folio = `MOV-${Date.now()}-${String(Number(c) + 1).padStart(5, '0')}`;
 
-    const result = db.prepare(`
+    const [result] = await conn.execute(`
       INSERT INTO movimientos (
         folio, tipo_movimiento_id, bunker_id, tienda_destino_id,
         bunker_destino_id, producto_id, cantidad, usuario_id,
         ticket_id, observaciones, foto_evidencia
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
+    `, [
       folio, tipo_movimiento_id, bunker_id, tienda_destino_id || null,
       bunker_destino_id || null, producto_id, cantidad, usuario_id,
-      ticket_id || null, observaciones || null, foto_evidencia || null
-    );
+      ticket_id || null, observaciones || null, foto_evidencia || null,
+    ]);
 
-    return { id: result.lastInsertRowid, folio };
+    return { id: result.insertId, folio };
   });
-
-  const resultado = transaction();
 
   try {
     await alertasService.evaluarStock(bunker_id, producto_id);
@@ -95,7 +96,7 @@ const crear = async (datos) => {
 };
 
 const listar = async (filtros) => {
-  const db = getDB();
+  const pool = getDB();
   const { page, limit, offset } = paginate(filtros.page, filtros.limit);
 
   const conditions = ['1=1'];
@@ -111,7 +112,7 @@ const listar = async (filtros) => {
 
   const where = conditions.join(' AND ');
 
-  const data = db.prepare(`
+  const [data] = await pool.execute(`
     SELECT m.id, m.folio, tm.nombre AS tipo_movimiento,
            b.nombre AS bunker, p.nombre AS producto,
            m.cantidad, u.nombre AS ingeniero,
@@ -129,20 +130,20 @@ const listar = async (filtros) => {
     WHERE ${where}
     ORDER BY m.fecha_hora DESC
     LIMIT ? OFFSET ?
-  `).all([...params, limit, offset]);
+  `, [...params, limit, offset]);
 
-  const total = db.prepare(`
+  const [[{ c }]] = await pool.execute(`
     SELECT COUNT(*) as c FROM movimientos m
     JOIN tipos_movimiento tm ON m.tipo_movimiento_id = tm.id
     WHERE ${where}
-  `).get(params).c;
+  `, params);
 
-  return paginatedResponse(data, total, page, limit);
+  return paginatedResponse(data, Number(c), page, limit);
 };
 
-const obtenerPorId = (id) => {
-  const db = getDB();
-  return db.prepare(`
+const obtenerPorId = async (id) => {
+  const pool = getDB();
+  const [[row]] = await pool.execute(`
     SELECT m.*, tm.nombre AS tipo_movimiento,
            b.nombre AS bunker, p.nombre AS producto,
            u.nombre AS ingeniero, t.nombre AS tienda_destino,
@@ -156,7 +157,8 @@ const obtenerPorId = (id) => {
     LEFT JOIN bunkers bd     ON m.bunker_destino_id  = bd.id
     LEFT JOIN tickets tk     ON m.ticket_id          = tk.id
     WHERE m.id = ?
-  `).get(id);
+  `, [id]);
+  return row;
 };
 
 module.exports = { crear, listar, obtenerPorId };

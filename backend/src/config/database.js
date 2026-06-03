@@ -1,41 +1,42 @@
-const Database = require('better-sqlite3');
-const path     = require('path');
-const fs       = require('fs');
+const mysql = require('mysql2/promise');
 
-const DB_PATH = process.env.DB_PATH || path.join(__dirname, '../../database/bunkers.db');
-let db;
+let pool;
 
 function getDB() {
-  if (!db) {
-    db = new Database(DB_PATH);
-    db.pragma('journal_mode = WAL');
-    db.pragma('foreign_keys = ON');
-    db.pragma('synchronous = NORMAL');
+  if (!pool) {
+    pool = mysql.createPool({
+      host:               process.env.DB_HOST     || 'localhost',
+      user:               process.env.DB_USER     || 'root',
+      password:           process.env.DB_PASS     || '',
+      database:           process.env.DB_NAME     || 'bunkers',
+      port:               parseInt(process.env.DB_PORT || '3306'),
+      waitForConnections: true,
+      connectionLimit:    10,
+      queueLimit:         0,
+    });
   }
-  return db;
+  return pool;
+}
+
+async function withTransaction(fn) {
+  const conn = await getDB().getConnection();
+  try {
+    await conn.beginTransaction();
+    const result = await fn(conn);
+    await conn.commit();
+    return result;
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
 }
 
 async function initDB() {
-  const database = getDB();
-  const schemaPath = path.join(__dirname, '../../database/schema.sql');
-
-  if (fs.existsSync(schemaPath)) {
-    const schema = fs.readFileSync(schemaPath, 'utf8');
-    database.exec(schema);
-    console.log('✅ Schema de base de datos inicializado');
-  }
-
-  const count = database.prepare('SELECT COUNT(*) as c FROM roles').get();
-  if (count.c === 0) {
-    const seedPath = path.join(__dirname, '../../database/seed.sql');
-    if (fs.existsSync(seedPath)) {
-      const seed = fs.readFileSync(seedPath, 'utf8');
-      database.exec(seed);
-      console.log('✅ Datos iniciales cargados');
-    }
-  }
-
-  return database;
+  await getDB().query('SELECT 1');
+  console.log('✅ Conexión a MySQL establecida');
+  return getDB();
 }
 
-module.exports = { getDB, initDB };
+module.exports = { getDB, initDB, withTransaction };

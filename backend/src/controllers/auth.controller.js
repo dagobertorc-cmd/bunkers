@@ -5,7 +5,6 @@ const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) return badRequest(res, 'Email y password requeridos');
-
     const result = await authService.login(email, password);
     return ok(res, result, 'Login exitoso');
   } catch (err) {
@@ -14,13 +13,11 @@ const login = async (req, res, next) => {
   }
 };
 
-const me = (req, res, next) => {
+const me = async (req, res, next) => {
   try {
-    const user = authService.me(req.user.id);
+    const user = await authService.me(req.user.id);
     return ok(res, user);
-  } catch (err) {
-    next(err);
-  }
+  } catch (err) { next(err); }
 };
 
 const logout = (_req, res) => ok(res, null, 'Sesión cerrada');

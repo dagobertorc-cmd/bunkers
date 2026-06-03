@@ -1,18 +1,18 @@
-const { getDB } = require('../config/database');
+const { getDB, withTransaction } = require('../config/database');
 const { paginate, paginatedResponse } = require('../utils/pagination.utils');
 
-function nextFolio(db) {
-  const row = db.prepare(
-    "SELECT MAX(CAST(SUBSTR(folio, 5) AS INTEGER)) as m FROM requisiciones WHERE folio LIKE 'REQ-%'"
-  ).get();
+async function nextFolio(conn) {
+  const [[row]] = await conn.execute(
+    "SELECT MAX(CAST(SUBSTRING(folio, 5) AS UNSIGNED)) as m FROM requisiciones WHERE folio LIKE 'REQ-%'"
+  );
   const n = (row?.m ?? 0) + 1;
   return `REQ-${String(n).padStart(5, '0')}`;
 }
 
-const listar = (filtros = {}) => {
-  const db = getDB();
+const listar = async (filtros = {}) => {
+  const pool = getDB();
   const { page, limit, offset } = paginate(filtros.page, filtros.limit);
-  const conds = ['1=1'];
+  const conds  = ['1=1'];
   const params = [];
 
   if (filtros.bunker_id) { conds.push('r.bunker_id = ?'); params.push(filtros.bunker_id); }
@@ -20,7 +20,7 @@ const listar = (filtros = {}) => {
 
   const where = conds.join(' AND ');
 
-  const data = db.prepare(`
+  const [data] = await pool.execute(`
     SELECT r.id, r.folio, r.estado, r.observaciones, r.fecha_requerida,
            r.created_at, r.updated_at, r.atendida_at,
            b.nombre AS bunker,
@@ -36,18 +36,18 @@ const listar = (filtros = {}) => {
     GROUP BY r.id
     ORDER BY r.created_at DESC
     LIMIT ? OFFSET ?
-  `).all([...params, limit, offset]);
+  `, [...params, limit, offset]);
 
-  const total = db.prepare(`
+  const [[{ c }]] = await pool.execute(`
     SELECT COUNT(*) as c FROM requisiciones r WHERE ${where}
-  `).get(params).c;
+  `, params);
 
-  return paginatedResponse(data, total, page, limit);
+  return paginatedResponse(data, Number(c), page, limit);
 };
 
-const obtener = (id) => {
-  const db = getDB();
-  const req = db.prepare(`
+const obtener = async (id) => {
+  const pool = getDB();
+  const [[req]] = await pool.execute(`
     SELECT r.id, r.folio, r.estado, r.observaciones, r.fecha_requerida,
            r.created_at, r.updated_at, r.atendida_at,
            b.id AS bunker_id, b.nombre AS bunker,
@@ -58,10 +58,10 @@ const obtener = (id) => {
     JOIN usuarios u ON r.usuario_id = u.id
     LEFT JOIN usuarios ua ON r.atendida_por = ua.id
     WHERE r.id = ?
-  `).get(id);
+  `, [id]);
   if (!req) return null;
 
-  req.items = db.prepare(`
+  const [items] = await pool.execute(`
     SELECT ri.id, ri.cantidad_pedida, ri.cantidad_surtida, ri.observaciones,
            p.id AS producto_id, p.nombre AS producto, p.unidad_medida, p.marca, p.modelo,
            c.nombre AS categoria,
@@ -73,56 +73,54 @@ const obtener = (id) => {
     LEFT JOIN inventario inv ON inv.producto_id = p.id AND inv.bunker_id = crearh.id
     WHERE ri.requisicion_id = ?
     ORDER BY p.nombre
-  `).all(id);
+  `, [id]);
 
+  req.items = items;
   return req;
 };
 
-const crear = (datos) => {
-  const db = getDB();
+const crear = async (datos) => {
   const { bunker_id, usuario_id, observaciones, fecha_requerida, items } = datos;
 
   if (!items || items.length === 0)
     throw Object.assign(new Error('La requisición debe tener al menos un producto'), { type: 'BUSINESS_ERROR' });
 
-  const folio = nextFolio(db);
+  const reqId = await withTransaction(async (conn) => {
+    const folio = await nextFolio(conn);
 
-  const tx = db.transaction(() => {
-    const result = db.prepare(`
+    const [result] = await conn.execute(`
       INSERT INTO requisiciones (folio, bunker_id, usuario_id, observaciones, fecha_requerida)
       VALUES (?, ?, ?, ?, ?)
-    `).run(folio, bunker_id, usuario_id, observaciones || null, fecha_requerida || null);
+    `, [folio, bunker_id, usuario_id, observaciones || null, fecha_requerida || null]);
 
-    const reqId = result.lastInsertRowid;
+    const id = result.insertId;
 
     for (const item of items) {
-      db.prepare(`
+      await conn.execute(`
         INSERT INTO requisicion_items (requisicion_id, producto_id, cantidad_pedida, observaciones)
         VALUES (?, ?, ?, ?)
-      `).run(reqId, item.producto_id, item.cantidad_pedida, item.observaciones || null);
+      `, [id, item.producto_id, item.cantidad_pedida, item.observaciones || null]);
     }
 
-    return reqId;
+    return id;
   });
 
-  const reqId = tx();
   return obtener(reqId);
 };
 
-const actualizar = (id, datos) => {
-  const db = getDB();
+const actualizar = async (id, datos) => {
+  const pool = getDB();
   const { estado, observaciones, atendida_por, items } = datos;
 
-  const req = db.prepare('SELECT id, estado FROM requisiciones WHERE id = ?').get(id);
+  const [[req]] = await pool.execute('SELECT id, estado FROM requisiciones WHERE id = ?', [id]);
   if (!req) throw Object.assign(new Error('Requisición no encontrada'), { type: 'NOT_FOUND' });
 
   const VALID_ESTADOS = ['PENDIENTE', 'EN_PROCESO', 'SURTIDA', 'CANCELADA'];
   if (estado && !VALID_ESTADOS.includes(estado))
     throw Object.assign(new Error('Estado inválido'), { type: 'BUSINESS_ERROR' });
 
-  const tx = db.transaction(() => {
-    const atendidaAt = (estado === 'SURTIDA' || estado === 'CANCELADA') ? 'CURRENT_TIMESTAMP' : 'atendida_at';
-    db.prepare(`
+  await withTransaction(async (conn) => {
+    await conn.execute(`
       UPDATE requisiciones SET
         estado = COALESCE(?, estado),
         observaciones = COALESCE(?, observaciones),
@@ -130,23 +128,22 @@ const actualizar = (id, datos) => {
         atendida_at = CASE WHEN ? IN ('SURTIDA','CANCELADA') THEN CURRENT_TIMESTAMP ELSE atendida_at END,
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `).run(estado || null, observaciones || null, atendida_por || null, estado || null, id);
+    `, [estado || null, observaciones || null, atendida_por || null, estado || null, id]);
 
     if (items) {
       for (const item of items) {
         if (item.id) {
-          db.prepare(`
+          await conn.execute(`
             UPDATE requisicion_items SET
               cantidad_surtida = COALESCE(?, cantidad_surtida),
               observaciones = COALESCE(?, observaciones)
             WHERE id = ? AND requisicion_id = ?
-          `).run(item.cantidad_surtida ?? null, item.observaciones || null, item.id, id);
+          `, [item.cantidad_surtida ?? null, item.observaciones || null, item.id, id]);
         }
       }
     }
   });
 
-  tx();
   return obtener(id);
 };
 

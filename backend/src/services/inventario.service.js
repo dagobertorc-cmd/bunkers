@@ -1,48 +1,48 @@
 const { getDB } = require('../config/database');
 const { paginate, paginatedResponse } = require('../utils/pagination.utils');
 
-const listar = (filtros = {}) => {
-  const db = getDB();
+const listar = async (filtros = {}) => {
+  const pool = getDB();
   const { page, limit, offset } = paginate(filtros.page, filtros.limit);
 
   const conditions = ['1=1'];
   const params     = [];
 
-  if (filtros.bunker_id)   { conditions.push('i.bunker_id = ?');   params.push(filtros.bunker_id); }
-  if (filtros.producto_id) { conditions.push('i.producto_id = ?'); params.push(filtros.producto_id); }
-  if (filtros.categoria_id){ conditions.push('p.categoria_id = ?');params.push(filtros.categoria_id); }
+  if (filtros.bunker_id)    { conditions.push('i.bunker_id = ?');    params.push(filtros.bunker_id); }
+  if (filtros.producto_id)  { conditions.push('i.producto_id = ?');  params.push(filtros.producto_id); }
+  if (filtros.categoria_id) { conditions.push('p.categoria_id = ?'); params.push(filtros.categoria_id); }
 
   const where = conditions.join(' AND ');
 
-  const data = db.prepare(`
+  const [data] = await pool.execute(`
     SELECT i.id, i.cantidad, i.stock_minimo, i.stock_maximo, i.ubicacion, i.updated_at,
            p.id AS producto_id, p.nombre AS producto, p.unidad_medida,
            c.nombre AS categoria,
            b.id AS bunker_id, b.nombre AS bunker
     FROM inventario i
-    JOIN productos p         ON i.producto_id = p.id
+    JOIN productos p            ON i.producto_id  = p.id
     JOIN categorias_productos c ON p.categoria_id = c.id
-    JOIN bunkers b           ON i.bunker_id   = b.id
+    JOIN bunkers b              ON i.bunker_id    = b.id
     WHERE ${where}
     ORDER BY b.nombre, c.nombre, p.nombre
     LIMIT ? OFFSET ?
-  `).all([...params, limit, offset]);
+  `, [...params, limit, offset]);
 
-  const total = db.prepare(`
+  const [[{ c }]] = await pool.execute(`
     SELECT COUNT(*) as c FROM inventario i
     JOIN productos p ON i.producto_id = p.id
     WHERE ${where}
-  `).get(params).c;
+  `, params);
 
-  return paginatedResponse(data, total, page, limit);
+  return paginatedResponse(data, Number(c), page, limit);
 };
 
-const critico = (bunkerId) => {
-  const db = getDB();
-  const cond = bunkerId ? 'AND i.bunker_id = ?' : '';
+const critico = async (bunkerId) => {
+  const pool = getDB();
+  const cond   = bunkerId ? 'AND i.bunker_id = ?' : '';
   const params = bunkerId ? [bunkerId] : [];
 
-  return db.prepare(`
+  const [rows] = await pool.execute(`
     SELECT i.id, i.cantidad, i.stock_minimo,
            p.nombre AS producto, p.unidad_medida,
            b.nombre AS bunker
@@ -51,22 +51,26 @@ const critico = (bunkerId) => {
     JOIN bunkers   b ON i.bunker_id   = b.id
     WHERE i.cantidad <= i.stock_minimo ${cond}
     ORDER BY (i.cantidad * 1.0 / i.stock_minimo) ASC
-  `).all(params);
+  `, params);
+
+  return rows;
 };
 
-const actualizar = (id, { stock_minimo, stock_maximo, ubicacion }) => {
-  const db = getDB();
-  db.prepare(`
+const actualizar = async (id, { stock_minimo, stock_maximo, ubicacion }) => {
+  const pool = getDB();
+  await pool.execute(`
     UPDATE inventario SET stock_minimo = ?, stock_maximo = ?, ubicacion = ?,
     updated_at = CURRENT_TIMESTAMP WHERE id = ?
-  `).run(stock_minimo, stock_maximo || null, ubicacion || null, id);
-  return db.prepare('SELECT * FROM inventario WHERE id = ?').get(id);
+  `, [stock_minimo, stock_maximo || null, ubicacion || null, id]);
+
+  const [[row]] = await pool.execute('SELECT * FROM inventario WHERE id = ?', [id]);
+  return row;
 };
 
-const crearh = (filtros = {}) => {
-  const db = getDB();
+const crearh = async (filtros = {}) => {
+  const pool = getDB();
   const { page, limit, offset } = paginate(filtros.page, filtros.limit);
-  const conds = ['b.es_crearh = 1'];
+  const conds  = ['b.es_crearh = 1'];
   const params = [];
 
   if (filtros.categoria_id) { conds.push('p.categoria_id = ?'); params.push(filtros.categoria_id); }
@@ -77,7 +81,7 @@ const crearh = (filtros = {}) => {
 
   const where = conds.join(' AND ');
 
-  const data = db.prepare(`
+  const [data] = await pool.execute(`
     SELECT i.id, i.cantidad, i.stock_minimo, i.stock_maximo, i.ubicacion, i.updated_at,
            p.id AS producto_id, p.nombre AS producto, p.unidad_medida, p.marca, p.modelo,
            c.nombre AS categoria,
@@ -89,16 +93,16 @@ const crearh = (filtros = {}) => {
     WHERE ${where}
     ORDER BY c.nombre, p.nombre
     LIMIT ? OFFSET ?
-  `).all([...params, limit, offset]);
+  `, [...params, limit, offset]);
 
-  const total = db.prepare(`
+  const [[{ c }]] = await pool.execute(`
     SELECT COUNT(*) as c FROM inventario i
     JOIN productos p ON i.producto_id = p.id
     JOIN bunkers b   ON i.bunker_id   = b.id
     WHERE ${where}
-  `).get(params).c;
+  `, params);
 
-  return paginatedResponse(data, total, page, limit);
+  return paginatedResponse(data, Number(c), page, limit);
 };
 
 module.exports = { listar, critico, actualizar, crearh };
