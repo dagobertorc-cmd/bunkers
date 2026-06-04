@@ -1,5 +1,6 @@
 const movimientosService = require('../services/movimientos.service');
 const { ok, created, notFound, businessError } = require('../utils/response.utils');
+const audit = require('../utils/audit');
 
 const crear = async (req, res, next) => {
   try {
@@ -9,6 +10,7 @@ const crear = async (req, res, next) => {
       foto_evidencia: req.file?.path || null,
     };
     const movimiento = await movimientosService.crear(datos);
+    audit.registrar({ usuarioId: req.user.id, accion: 'CREAR', tabla: 'movimientos', registroId: movimiento.id, datos: { folio: movimiento.folio, ...datos }, ip: req.ip });
     return created(res, movimiento, 'Movimiento registrado correctamente');
   } catch (err) {
     if (err.type === 'BUSINESS_ERROR') return businessError(res, err.message);

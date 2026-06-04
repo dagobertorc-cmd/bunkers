@@ -1,6 +1,11 @@
 const { getDB, withTransaction } = require('../config/database');
-const alertasService = require('./alertas.service');
+const alertasService   = require('./alertas.service');
+const { getTipos }     = require('./tiposMovimiento');
+const { invalidate }   = require('../utils/memcache');
 const { paginate, paginatedResponse } = require('../utils/pagination.utils');
+
+const TIPOS_SALIDA  = new Set(['SALIDA', 'TRASLADO', 'PRESTAMO']);
+const TIPOS_ENTRADA = new Set(['ENTRADA', 'DEVOLUCION', 'AJUSTE']);
 
 const crear = async (datos) => {
   const {
@@ -9,13 +14,12 @@ const crear = async (datos) => {
     usuario_id, ticket_id, observaciones, foto_evidencia,
   } = datos;
 
-  const resultado = await withTransaction(async (conn) => {
-    const [[tipoMov]] = await conn.execute(
-      'SELECT nombre FROM tipos_movimiento WHERE id = ?', [tipo_movimiento_id]
-    );
-    if (!tipoMov) throw { type: 'BUSINESS_ERROR', message: 'Tipo de movimiento inválido' };
+  const { byId } = await getTipos();
+  const tipoNombre = byId.get(Number(tipo_movimiento_id));
+  if (!tipoNombre) throw { type: 'BUSINESS_ERROR', message: 'Tipo de movimiento inválido' };
 
-    if (['SALIDA', 'TRASLADO', 'PRESTAMO'].includes(tipoMov.nombre)) {
+  const resultado = await withTransaction(async (conn) => {
+    if (TIPOS_SALIDA.has(tipoNombre)) {
       const [[inv]] = await conn.execute(
         'SELECT cantidad FROM inventario WHERE bunker_id = ? AND producto_id = ?',
         [bunker_id, producto_id]
@@ -32,7 +36,7 @@ const crear = async (datos) => {
       `, [cantidad, bunker_id, producto_id]);
     }
 
-    if (['ENTRADA', 'DEVOLUCION', 'AJUSTE'].includes(tipoMov.nombre)) {
+    if (TIPOS_ENTRADA.has(tipoNombre)) {
       const [[existing]] = await conn.execute(
         'SELECT id FROM inventario WHERE bunker_id = ? AND producto_id = ?',
         [bunker_id, producto_id]
@@ -44,13 +48,13 @@ const crear = async (datos) => {
         `, [cantidad, bunker_id, producto_id]);
       } else {
         await conn.execute(
-          'INSERT INTO inventario (bunker_id, producto_id, cantidad, stock_minimo) VALUES (?, ?, ?, 5)',
+          'INSERT INTO inventario (bunker_id, producto_id, cantidad) VALUES (?, ?, ?)',
           [bunker_id, producto_id, cantidad]
         );
       }
     }
 
-    if (tipoMov.nombre === 'TRASLADO' && bunker_destino_id) {
+    if (tipoNombre === 'TRASLADO' && bunker_destino_id) {
       const [[existingDest]] = await conn.execute(
         'SELECT id FROM inventario WHERE bunker_id = ? AND producto_id = ?',
         [bunker_destino_id, producto_id]
@@ -62,35 +66,39 @@ const crear = async (datos) => {
         `, [cantidad, bunker_destino_id, producto_id]);
       } else {
         await conn.execute(
-          'INSERT INTO inventario (bunker_id, producto_id, cantidad, stock_minimo) VALUES (?, ?, ?, 5)',
+          'INSERT INTO inventario (bunker_id, producto_id, cantidad) VALUES (?, ?, ?)',
           [bunker_destino_id, producto_id, cantidad]
         );
       }
     }
 
-    const [[{ c }]] = await conn.execute('SELECT COUNT(*) as c FROM movimientos');
-    const folio = `MOV-${Date.now()}-${String(Number(c) + 1).padStart(5, '0')}`;
-
+    // Insert first, then generate folio from AUTO_INCREMENT id (evita race condition)
     const [result] = await conn.execute(`
       INSERT INTO movimientos (
-        folio, tipo_movimiento_id, bunker_id, tienda_destino_id,
+        tipo_movimiento_id, bunker_id, tienda_destino_id,
         bunker_destino_id, producto_id, cantidad, usuario_id,
         ticket_id, observaciones, foto_evidencia
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
-      folio, tipo_movimiento_id, bunker_id, tienda_destino_id || null,
+      tipo_movimiento_id, bunker_id, tienda_destino_id || null,
       bunker_destino_id || null, producto_id, cantidad, usuario_id,
       ticket_id || null, observaciones || null, foto_evidencia || null,
     ]);
 
-    return { id: result.insertId, folio };
+    const id    = result.insertId;
+    const folio = `MOV-${String(id).padStart(7, '0')}`;
+    await conn.execute('UPDATE movimientos SET folio = ? WHERE id = ?', [folio, id]);
+
+    return { id, folio };
   });
 
+  // Fuera de la transacción: alertas y caché no bloquean el movimiento
   try {
     await alertasService.evaluarStock(bunker_id, producto_id);
   } catch (e) {
     console.warn('⚠️ Error al evaluar alertas:', e.message);
   }
+  invalidate('kpis', 'consumoPorBunker');
 
   return resultado;
 };
@@ -129,8 +137,8 @@ const listar = async (filtros) => {
     LEFT JOIN tickets tk     ON m.ticket_id          = tk.id
     WHERE ${where}
     ORDER BY m.fecha_hora DESC
-    LIMIT ${limit} OFFSET ${offset}
-  `, params);
+    LIMIT ? OFFSET ?
+  `, [...params, limit, offset]);
 
   const [[{ c }]] = await pool.execute(`
     SELECT COUNT(*) as c FROM movimientos m

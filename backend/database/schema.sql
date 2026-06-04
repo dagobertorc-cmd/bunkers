@@ -244,6 +244,22 @@ CREATE TABLE IF NOT EXISTS requisiciones (
   CONSTRAINT fk_req_atendida FOREIGN KEY (atendida_por) REFERENCES usuarios(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS audit_log (
+  id          INT         NOT NULL AUTO_INCREMENT,
+  usuario_id  INT,
+  accion      VARCHAR(50) NOT NULL,
+  tabla       VARCHAR(50) NOT NULL,
+  registro_id INT,
+  datos       JSON,
+  ip          VARCHAR(45),
+  created_at  DATETIME    DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_audit_usuario (usuario_id),
+  KEY idx_audit_tabla_reg (tabla, registro_id),
+  KEY idx_audit_created (created_at),
+  CONSTRAINT fk_audit_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS requisicion_items (
   id               INT      NOT NULL AUTO_INCREMENT,
   requisicion_id   INT      NOT NULL,

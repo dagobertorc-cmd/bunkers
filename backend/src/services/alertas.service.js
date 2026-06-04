@@ -39,7 +39,15 @@ const evaluarStock = async (bunkerId, productoId) => {
 
 const listar = async ({ leida, page, limit, offset }) => {
   const pool = getDB();
-  const conditions = leida !== undefined ? `WHERE a.leida = ${leida ? 1 : 0}` : '';
+  const conds  = [];
+  const params = [];
+
+  if (leida !== undefined) {
+    conds.push('a.leida = ?');
+    params.push(leida ? 1 : 0);
+  }
+
+  const where = conds.length ? `WHERE ${conds.join(' AND ')}` : '';
 
   const [data] = await pool.execute(`
     SELECT a.*, i.cantidad, i.stock_minimo,
@@ -49,12 +57,15 @@ const listar = async ({ leida, page, limit, offset }) => {
     JOIN inventario i ON a.inventario_id = i.id
     JOIN productos  p ON i.producto_id   = p.id
     JOIN bunkers    b ON i.bunker_id     = b.id
-    ${conditions}
+    ${where}
     ORDER BY a.created_at DESC
-    LIMIT ${limit} OFFSET ${offset}
-  `, []);
+    LIMIT ? OFFSET ?
+  `, [...params, limit, offset]);
 
-  const [[{ c }]] = await pool.execute(`SELECT COUNT(*) as c FROM alertas_stock a ${conditions}`);
+  const [[{ c }]] = await pool.execute(
+    `SELECT COUNT(*) as c FROM alertas_stock a ${where}`,
+    params,
+  );
   return { data, total: Number(c), page, limit, pages: Math.ceil(Number(c) / limit) };
 };
 

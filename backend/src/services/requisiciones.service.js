@@ -1,12 +1,9 @@
 const { getDB, withTransaction } = require('../config/database');
 const { paginate, paginatedResponse } = require('../utils/pagination.utils');
 
-async function nextFolio(conn) {
-  const [[row]] = await conn.execute(
-    "SELECT MAX(CAST(SUBSTRING(folio, 5) AS UNSIGNED)) as m FROM requisiciones WHERE folio LIKE 'REQ-%'"
-  );
-  const n = (row?.m ?? 0) + 1;
-  return `REQ-${String(n).padStart(5, '0')}`;
+// Generates folio from AUTO_INCREMENT id to avoid race conditions
+function buildFolio(id) {
+  return `REQ-${String(id).padStart(5, '0')}`;
 }
 
 const listar = async (filtros = {}) => {
@@ -86,14 +83,15 @@ const crear = async (datos) => {
     throw Object.assign(new Error('La requisición debe tener al menos un producto'), { type: 'BUSINESS_ERROR' });
 
   const reqId = await withTransaction(async (conn) => {
-    const folio = await nextFolio(conn);
-
+    // Insert with a temporary placeholder; update folio from insertId (evita race condition)
     const [result] = await conn.execute(`
       INSERT INTO requisiciones (folio, bunker_id, usuario_id, observaciones, fecha_requerida)
-      VALUES (?, ?, ?, ?, ?)
-    `, [folio, bunker_id, usuario_id, observaciones || null, fecha_requerida || null]);
+      VALUES (UUID(), ?, ?, ?, ?)
+    `, [bunker_id, usuario_id, observaciones || null, fecha_requerida || null]);
 
-    const id = result.insertId;
+    const id    = result.insertId;
+    const folio = buildFolio(id);
+    await conn.execute('UPDATE requisiciones SET folio = ? WHERE id = ?', [folio, id]);
 
     for (const item of items) {
       await conn.execute(`

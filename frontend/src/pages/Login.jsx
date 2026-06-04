@@ -22,7 +22,7 @@ export default function Login() {
     setError('');
     try {
       const res = await login(email, password);
-      setAuth(res.data.data.token, res.data.data.user);
+      setAuth(res.data.data.user);
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.message || 'Error al iniciar sesión');

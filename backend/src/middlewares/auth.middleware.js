@@ -1,8 +1,11 @@
 const { verify } = require('../utils/jwt.utils');
 
 const verifyToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  // Cookie httpOnly primero; fallback a Authorization header para clientes API
+  const token = req.cookies?.token || (() => {
+    const h = req.headers['authorization'];
+    return h && h.startsWith('Bearer ') ? h.slice(7) : null;
+  })();
 
   if (!token) {
     return res.status(401).json({ success: false, message: 'Token requerido' });

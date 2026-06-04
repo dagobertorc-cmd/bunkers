@@ -14,5 +14,6 @@ router.use('/dashboard',   require('./dashboard.routes'));
 router.use('/importar',    require('./importar.routes'));
 router.use('/formatos',      require('./formatos.routes'));
 router.use('/requisiciones', require('./requisiciones.routes'));
+router.use('/reportes',      require('./reportes.routes'));
 
 module.exports = router;

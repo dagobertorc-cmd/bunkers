@@ -8,18 +8,15 @@ const stored = () => {
 };
 
 export const useAuthStore = create((set) => ({
-  token: localStorage.getItem('token') || null,
-  user:  stored(),
+  user: stored(),
 
-  setAuth: (token, user) => {
-    localStorage.setItem('token', token);
+  setAuth: (user) => {
     localStorage.setItem('user', JSON.stringify(user));
-    set({ token, user });
+    set({ user });
   },
 
   clearAuth: () => {
-    localStorage.removeItem('token');
     localStorage.removeItem('user');
-    set({ token: null, user: null });
+    set({ user: null });
   },
 }));
