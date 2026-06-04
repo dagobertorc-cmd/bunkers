@@ -25,8 +25,8 @@ const listar = async (filtros = {}) => {
     JOIN bunkers b              ON i.bunker_id    = b.id
     WHERE ${where}
     ORDER BY b.nombre, c.nombre, p.nombre
-    LIMIT ? OFFSET ?
-  `, [...params, limit, offset]);
+    LIMIT ${limit} OFFSET ${offset}
+  `, params);
 
   const [[{ c }]] = await pool.execute(`
     SELECT COUNT(*) as c FROM inventario i
@@ -92,8 +92,8 @@ const crearh = async (filtros = {}) => {
     JOIN bunkers b              ON i.bunker_id    = b.id
     WHERE ${where}
     ORDER BY c.nombre, p.nombre
-    LIMIT ? OFFSET ?
-  `, [...params, limit, offset]);
+    LIMIT ${limit} OFFSET ${offset}
+  `, params);
 
   const [[{ c }]] = await pool.execute(`
     SELECT COUNT(*) as c FROM inventario i

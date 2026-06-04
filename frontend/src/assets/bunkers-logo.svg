@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 200" width="520" height="200">
+  <defs>
+    <!-- Sombra suave exterior -->
+    <filter id="shadow" x="-8%" y="-12%" width="116%" height="124%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#00000033"/>
+    </filter>
+    <!-- Brillo interno superior -->
+    <linearGradient id="shineGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.18"/>
+      <stop offset="45%"  stop-color="#ffffff" stop-opacity="0.04"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.08"/>
+    </linearGradient>
+    <!-- Rojo corporativo con leve degradado vertical -->
+    <linearGradient id="redGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#D4142A"/>
+      <stop offset="100%" stop-color="#A80D1E"/>
+    </linearGradient>
+    <!-- Clip para el rectángulo -->
+    <clipPath id="rectClip">
+      <rect x="10" y="10" width="500" height="180" rx="28" ry="28"/>
+    </clipPath>
+  </defs>
+
+  <!-- Sombra base (rectángulo offset) -->
+  <rect x="14" y="16" width="500" height="180" rx="28" ry="28"
+        fill="#00000022" filter="url(#shadow)"/>
+
+  <!-- Rectángulo principal rojo -->
+  <rect x="10" y="10" width="500" height="180" rx="28" ry="28"
+        fill="url(#redGrad)"/>
+
+  <!-- Borde / stroke oscuro sutil -->
+  <rect x="10" y="10" width="500" height="180" rx="28" ry="28"
+        fill="none" stroke="#7a0010" stroke-width="1.5" opacity="0.6"/>
+
+  <!-- Capa de brillo interna (glass effect) -->
+  <rect x="10" y="10" width="500" height="180" rx="28" ry="28"
+        fill="url(#shineGrad)" clip-path="url(#rectClip)"/>
+
+  <!-- Línea decorativa azul marino superior izquierda -->
+  <rect x="10" y="10" width="8" height="180" rx="8" ry="8"
+        fill="#1a2a4a" opacity="0.55" clip-path="url(#rectClip)"/>
+  <!-- Línea decorativa azul marino inferior derecha -->
+  <rect x="502" y="10" width="8" height="180" rx="0" ry="0"
+        fill="#1a2a4a" opacity="0.35" clip-path="url(#rectClip)"/>
+
+  <!-- ===== TEXTO PRINCIPAL: BUNKERS ===== -->
+  <!-- Sombra del texto principal -->
+  <text x="260" y="116"
+        font-family="'Arial Black', 'Arial', 'Helvetica Neue', sans-serif"
+        font-size="92"
+        font-weight="900"
+        letter-spacing="6"
+        text-anchor="middle"
+        fill="#00000030">BUNKERS</text>
+
+  <!-- Texto principal blanco -->
+  <text x="260" y="112"
+        font-family="'Arial Black', 'Arial', 'Helvetica Neue', sans-serif"
+        font-size="92"
+        font-weight="900"
+        letter-spacing="6"
+        text-anchor="middle"
+        fill="#FFFFFF">BUNKERS</text>
+
+  <!-- Highlight sutil en texto (tono casi blanco sobre blanco) -->
+  <text x="260" y="112"
+        font-family="'Arial Black', 'Arial', 'Helvetica Neue', sans-serif"
+        font-size="92"
+        font-weight="900"
+        letter-spacing="6"
+        text-anchor="middle"
+        fill="none"
+        stroke="#ffffff"
+        stroke-width="0.5"
+        opacity="0.4">BUNKERS</text>
+
+  <!-- ===== SEPARADOR decorativo ===== -->
+  <line x1="130" y1="128" x2="390" y2="128"
+        stroke="#ffffff" stroke-width="1" opacity="0.35"/>
+
+  <!-- ===== SUBTÍTULO: de Refacciones ===== -->
+  <text x="260" y="158"
+        font-family="'Arial', 'Helvetica Neue', sans-serif"
+        font-size="22"
+        font-weight="400"
+        letter-spacing="5"
+        text-anchor="middle"
+        fill="#FFD4D4"
+        opacity="0.92">de Refacciones</text>
+</svg>

@@ -103,29 +103,37 @@ export default function Inventario() {
       {loading ? <Spinner /> : (
         <div className="card p-0 overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead style={{ borderBottom: '1px solid var(--divider)', backgroundColor: 'var(--bg-card-2)' }}>
               <tr>{['Bunker','Producto','Categoría','Cantidad','Mín','Máx','Ubicación','Acciones'].map(h =>
-                <th key={h} className="text-left px-4 py-3 font-medium text-gray-600 whitespace-nowrap">{h}</th>
+                <th key={h} className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider whitespace-nowrap"
+                    style={{ color: 'var(--text-muted)' }}>{h}</th>
               )}</tr>
             </thead>
             <tbody>
               {data.map(i => (
-                <tr key={i.id} className={`border-b border-gray-100 hover:bg-gray-50 ${i.cantidad <= i.stock_minimo ? 'bg-red-50/50' : ''}`}>
-                  <td className="px-4 py-3 whitespace-nowrap">{i.bunker}</td>
-                  <td className="px-4 py-3">{i.producto}</td>
-                  <td className="px-4 py-3 text-gray-500">{i.categoria}</td>
+                <tr key={i.id}
+                  className={`border-b transition-colors ${i.cantidad <= i.stock_minimo ? 'bg-red-500/10' : ''}`}
+                  style={{ borderColor: 'var(--divider)' }}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--row-hover)'}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = i.cantidad <= i.stock_minimo ? 'rgba(239,68,68,0.10)' : 'transparent'}
+                >
+                  <td className="px-4 py-3 whitespace-nowrap font-medium" style={{ color: 'var(--text-primary)' }}>{i.bunker}</td>
+                  <td className="px-4 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>{i.producto}</td>
+                  <td className="px-4 py-3" style={{ color: 'var(--text-muted)' }}>{i.categoria}</td>
                   <td className={`px-4 py-3 font-bold flex items-center gap-1 ${
                     i.cantidad === 0 ? 'text-red-700' : i.cantidad <= i.stock_minimo ? 'text-yellow-700' : 'text-green-700'
                   }`}>
                     {i.cantidad <= i.stock_minimo && <AlertTriangle size={13} />}
                     {i.cantidad} {i.unidad_medida}
                   </td>
-                  <td className="px-4 py-3 text-gray-500">{i.stock_minimo}</td>
-                  <td className="px-4 py-3 text-gray-500">{i.stock_maximo ?? '—'}</td>
-                  <td className="px-4 py-3 text-gray-500">{i.ubicacion ?? '—'}</td>
+                  <td className="px-4 py-3" style={{ color: 'var(--text-faint)' }}>{i.stock_minimo}</td>
+                  <td className="px-4 py-3" style={{ color: 'var(--text-faint)' }}>{i.stock_maximo ?? '—'}</td>
+                  <td className="px-4 py-3" style={{ color: 'var(--text-faint)' }}>{i.ubicacion ?? '—'}</td>
                   <td className="px-4 py-3">
                     {isAdmin() && (
-                      <button className="text-gray-400 hover:text-yellow-600" title="Editar stock mínimo" onClick={() => setEditItem(i)}>
+                      <button className="hover:text-yellow-400 transition-colors"
+                              style={{ color: 'var(--text-faint)' }}
+                              title="Editar stock mínimo" onClick={() => setEditItem(i)}>
                         <Pencil size={15} />
                       </button>
                     )}

@@ -1,4 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useUIStore } from './store/uiStore';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 import Layout         from './components/layout/Layout';
 import Login          from './pages/Login';
@@ -20,6 +22,11 @@ import Requisiciones     from './pages/Requisiciones';
 import NuevaRequisicion  from './pages/NuevaRequisicion';
 
 export default function App() {
+  const theme = useUIStore((s) => s.theme);
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
   return (
     <BrowserRouter>
       <Routes>

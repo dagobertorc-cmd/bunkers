@@ -79,7 +79,7 @@ export default function Bunkers() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Bunkers</h1>
+        <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Bunkers</h1>
         {isAdmin() && (
           <button className="btn-primary flex items-center gap-2" onClick={() => setModal('create')}>
             <Plus size={16} /> Nuevo bunker
@@ -89,34 +89,79 @@ export default function Bunkers() {
 
       <Alert type="error" message={error} />
       {loading ? <Spinner /> : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {data.filter(b => !b.es_crearh).map(b => (
-            <div key={b.id} className="card relative group">
-              {isAdmin() && (
-                <div className="absolute top-3 right-3 flex gap-1">
-                  <button className="text-gray-300 hover:text-yellow-600 p-1"
-                    onClick={e => { e.stopPropagation(); setModal({ edit: b }); }}>
-                    <Pencil size={14} />
-                  </button>
-                  <button className="text-gray-300 hover:text-red-600 p-1"
-                    onClick={e => { e.stopPropagation(); setModal({ delete: b }); }}>
-                    <Trash2 size={14} />
-                  </button>
+            <div
+              key={b.id}
+              className="card group cursor-pointer transition-all duration-200 hover:-translate-y-0.5 flex flex-col"
+              style={{ padding: '1rem' }}
+              onClick={() => navigate(`/inventario?bunker_id=${b.id}`)}
+            >
+              {/* ── Cabecera: icono + nombre + acciones ── */}
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors"
+                    style={{ background: 'rgba(59,130,246,0.15)', color: '#60a5fa' }}
+                  >
+                    <Wrench size={18} />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-sm leading-tight truncate"
+                        style={{ color: 'var(--text-primary)' }}>
+                      {b.nombre}
+                    </h3>
+                    <p className="text-xs mt-0.5 truncate"
+                       style={{ color: 'var(--text-muted)' }}>
+                      {b.ciudad}
+                    </p>
+                  </div>
                 </div>
-              )}
-              <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center mb-3">
-                <Wrench size={20} />
+
+                {isAdmin() && (
+                  <div className="flex gap-0.5 flex-shrink-0 pt-0.5"
+                       onClick={e => e.stopPropagation()}>
+                    <button
+                      title="Editar"
+                      className="p-1.5 rounded-lg hover:text-yellow-400 transition-colors"
+                      style={{ color: 'var(--text-faint)' }}
+                      onClick={e => { e.stopPropagation(); setModal({ edit: b }); }}>
+                      <Pencil size={13} />
+                    </button>
+                    <button
+                      title="Eliminar"
+                      className="p-1.5 rounded-lg hover:text-red-400 transition-colors"
+                      style={{ color: 'var(--text-faint)' }}
+                      onClick={e => { e.stopPropagation(); setModal({ delete: b }); }}>
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                )}
               </div>
-              <h3 className="font-semibold text-gray-900">{b.nombre}</h3>
-              <p className="text-sm text-gray-500 mt-1">{b.ciudad}</p>
-              <p className="text-xs text-gray-400 mt-2">Responsable: {b.responsable || '—'}</p>
-              {b.telefono && <p className="text-xs text-gray-400">{b.telefono}</p>}
-              <button
-                className="mt-3 flex items-center gap-1.5 text-xs text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity hover:underline"
-                onClick={() => navigate(`/inventario?bunker_id=${b.id}`)}
-              >
-                <Package size={13} /> Ver inventario
-              </button>
+
+              {/* ── Separador ── */}
+              <div className="my-3" style={{ height: '1px', background: 'var(--divider)' }} />
+
+              {/* ── Info inferior ── */}
+              <div className="flex-1 space-y-1">
+                <p className="text-xs" style={{ color: 'var(--text-faint)' }}>
+                  <span className="font-medium" style={{ color: 'var(--text-label)' }}>Responsable: </span>
+                  {b.responsable || '—'}
+                </p>
+                {b.telefono && (
+                  <p className="text-xs" style={{ color: 'var(--text-faint)' }}>
+                    {b.telefono}
+                  </p>
+                )}
+              </div>
+
+              {/* ── Ver inventario (aparece en hover) ── */}
+              <div className="flex items-center gap-1.5 mt-3 text-xs font-medium
+                              opacity-0 group-hover:opacity-100 transition-opacity"
+                   style={{ color: '#60a5fa' }}>
+                <Package size={12} />
+                <span>Ver inventario</span>
+              </div>
             </div>
           ))}
         </div>

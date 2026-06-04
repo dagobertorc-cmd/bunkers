@@ -4,6 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Bunkers de Refacciones</title>
+    <!-- Aplica el tema guardado antes del primer paint para evitar flash -->
+    <script>
+      try {
+        var ui = JSON.parse(localStorage.getItem('bunkers-ui'));
+        var t = ui && ui.state && ui.state.theme;
+        if (t) document.documentElement.setAttribute('data-theme', t);
+      } catch(e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

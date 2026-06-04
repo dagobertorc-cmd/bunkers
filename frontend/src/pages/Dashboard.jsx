@@ -7,6 +7,7 @@ import ConsumoPorBunker  from '../components/dashboard/ConsumoPorBunker';
 import ProductosMasUsados from '../components/dashboard/ProductosMasUsados';
 import Spinner           from '../components/ui/Spinner';
 import { useAuth }       from '../hooks/useAuth';
+import { useTheme }      from '../hooks/useTheme';
 import { ROLES }         from '../utils/constants';
 import {
   getKPIs, getConsumoPorBunker, getTopProductos, getMovimientosRecientes,
@@ -39,18 +40,30 @@ export default function Dashboard() {
     Promise.allSettled(requests).finally(() => setLoading(false));
   }, [isSupervisor]);
 
+  const { t } = useTheme();
+
   if (loading) return <Spinner />;
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-xs uppercase tracking-widest mb-1" style={{ color: t.textFaint }}>Panel General</p>
+          <h1 className="text-2xl font-bold" style={{ color: t.text }}>Dashboard</h1>
+        </div>
+        <div
+          className="h-px flex-1 mx-6"
+          style={{ background: 'linear-gradient(90deg, rgba(59,130,246,0.3), transparent)' }}
+        />
+      </div>
 
       {isSupervisor && kpis && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <KPICard title="Productos activos"   value={kpis.totalProductos}     icon={Package}       color="blue" />
-          <KPICard title="Movimientos hoy"     value={kpis.totalMovHoy}        icon={ArrowLeftRight} color="green" />
-          <KPICard title="Alertas pendientes"  value={kpis.alertasPendientes}  icon={Bell}          color="yellow" />
-          <KPICard title="Stock crítico"       value={kpis.stockCritico}       icon={AlertTriangle} color="red" />
+          <KPICard title="Productos activos"   value={kpis.totalProductos}    icon={Package}        color="blue" />
+          <KPICard title="Movimientos hoy"     value={kpis.totalMovHoy}       icon={ArrowLeftRight} color="green" />
+          <KPICard title="Alertas pendientes"  value={kpis.alertasPendientes} icon={Bell}           color="yellow" />
+          <KPICard title="Stock crítico"       value={kpis.stockCritico}      icon={AlertTriangle}  color="red" />
         </div>
       )}
 

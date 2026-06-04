@@ -35,8 +35,8 @@ const listar = async (filtros = {}) => {
     WHERE ${where}
     GROUP BY r.id
     ORDER BY r.created_at DESC
-    LIMIT ? OFFSET ?
-  `, [...params, limit, offset]);
+    LIMIT ${limit} OFFSET ${offset}
+  `, params);
 
   const [[{ c }]] = await pool.execute(`
     SELECT COUNT(*) as c FROM requisiciones r WHERE ${where}

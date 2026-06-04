@@ -33,7 +33,13 @@
       "Bash(node -e \"try { require\\('better-sqlite3'\\); console.log\\('still installed'\\) } catch\\(e\\) { console.log\\('✅ better-sqlite3 removed'\\) }\")",
       "Bash(node *)",
       "Bash(mysql --version)",
-      "Bash(brew services *)"
+      "Bash(brew services *)",
+      "Bash(npm run *)",
+      "Bash(echo \"PID: $!\")",
+      "Bash(npx playwright *)",
+      "Bash(npm init *)",
+      "Bash(xargs ls -la)",
+      "Bash(wait)"
     ]
   }
 }

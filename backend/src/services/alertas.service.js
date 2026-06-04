@@ -51,8 +51,8 @@ const listar = async ({ leida, page, limit, offset }) => {
     JOIN bunkers    b ON i.bunker_id     = b.id
     ${conditions}
     ORDER BY a.created_at DESC
-    LIMIT ? OFFSET ?
-  `, [limit, offset]);
+    LIMIT ${limit} OFFSET ${offset}
+  `, []);
 
   const [[{ c }]] = await pool.execute(`SELECT COUNT(*) as c FROM alertas_stock a ${conditions}`);
   return { data, total: Number(c), page, limit, pages: Math.ceil(Number(c) / limit) };

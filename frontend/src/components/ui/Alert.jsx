@@ -1,8 +1,8 @@
 const TYPES = {
-  error:   'bg-red-50 text-red-800 border-red-200',
-  warning: 'bg-yellow-50 text-yellow-800 border-yellow-200',
-  success: 'bg-green-50 text-green-800 border-green-200',
-  info:    'bg-blue-50 text-blue-800 border-blue-200',
+  error:   'bg-red-900/30   text-red-400    border-red-700/40',
+  warning: 'bg-yellow-900/30 text-yellow-400 border-yellow-700/40',
+  success: 'bg-green-900/30 text-green-400  border-green-700/40',
+  info:    'bg-blue-900/30  text-blue-400   border-blue-700/40',
 };
 
 export default function Alert({ type = 'info', message }) {

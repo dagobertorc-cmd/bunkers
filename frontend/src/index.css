@@ -2,26 +2,143 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  body {
-    @apply bg-gray-50 text-gray-900 antialiased;
-  }
+/* ═══════════════════════════════════════
+   Variables de tema
+═══════════════════════════════════════ */
+:root {
+  /* Dark theme (default) */
+  --bg-page:        #081529;
+  --bg-card:        #172f5c;
+  --bg-card-2:      #1a3567;
+  --bg-input:       #122449;
+  --border-card:    rgba(29,78,216,0.18);
+  --border-input:   #173260;
+  --text-primary:   #f1f5f9;
+  --text-muted:     #93c5fd;
+  --text-faint:     rgba(147,197,253,0.45);
+  --text-label:     rgba(147,197,253,0.75);
+  --shadow-card:    0 4px 24px rgba(0,0,0,0.40);
+  --divider:        rgba(18,40,73,0.60);
+  --row-hover:      rgba(15,35,71,0.50);
+  --scrollbar-bg:   #050d1e;
+  --scrollbar-thumb:#173260;
 }
 
+[data-theme="light"] {
+  --bg-page:        #f0f4ff;
+  --bg-card:        #ffffff;
+  --bg-card-2:      #f8fafc;
+  --bg-input:       #ffffff;
+  --border-card:    #e2e8f0;
+  --border-input:   #d1d5db;
+  --text-primary:   #111827;
+  --text-muted:     #374151;
+  --text-faint:     #9ca3af;
+  --text-label:     #6b7280;
+  --shadow-card:    0 2px 12px rgba(0,0,0,0.08);
+  --divider:        #e5e7eb;
+  --row-hover:      #f1f5f9;
+  --scrollbar-bg:   #e5e7eb;
+  --scrollbar-thumb:#94a3b8;
+}
+
+/* ═══════════════════════════════════════
+   Base
+═══════════════════════════════════════ */
+@layer base {
+  body {
+    background-color: var(--bg-page);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
+
+  ::-webkit-scrollbar        { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track  { background: var(--scrollbar-bg); }
+  ::-webkit-scrollbar-thumb  { background: var(--scrollbar-thumb); border-radius: 9999px; }
+  ::-webkit-scrollbar-thumb:hover { background: #2563eb; }
+}
+
+/* ═══════════════════════════════════════
+   Componentes
+═══════════════════════════════════════ */
 @layer components {
+
+  /* ── Botones ── */
   .btn-primary {
-    @apply bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply font-medium px-4 py-2 rounded-lg transition-all duration-150
+           text-white disabled:opacity-40 disabled:cursor-not-allowed;
+    background-color: #2563eb;
+    box-shadow: 0 0 12px rgba(59,130,246,0.25);
   }
+  .btn-primary:hover:not(:disabled) {
+    background-color: #3b82f6;
+    box-shadow: 0 0 24px rgba(59,130,246,0.35);
+  }
+
   .btn-secondary {
-    @apply bg-white hover:bg-gray-50 text-gray-700 font-medium px-4 py-2 rounded-lg border border-gray-300 transition-colors;
+    @apply font-medium px-4 py-2 rounded-lg transition-all duration-150;
+    background-color: var(--bg-card-2);
+    color: var(--text-muted);
+    border: 1px solid var(--border-input);
   }
+  .btn-secondary:hover {
+    background-color: var(--bg-card);
+    border-color: #2563eb;
+  }
+
   .btn-danger {
-    @apply bg-red-600 hover:bg-red-700 text-white font-medium px-4 py-2 rounded-lg transition-colors;
+    @apply bg-red-700 hover:bg-red-600 text-white font-medium px-4 py-2
+           rounded-lg transition-all duration-150;
   }
+
+  /* ── Inputs ── */
   .input-field {
-    @apply w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+    @apply w-full rounded-lg px-3 py-2 text-sm transition-colors duration-150;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border-input);
+    color: var(--text-primary);
+    outline: none;
   }
+  .input-field::placeholder { color: var(--text-faint); }
+  .input-field:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(59,130,246,0.25);
+  }
+
+  /* ── Select options ── */
+  select.input-field option {
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+  }
+
+  /* ── Cards ── */
   .card {
-    @apply bg-white rounded-xl shadow-sm border border-gray-200 p-6;
+    @apply rounded-xl p-6;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-card);
+    box-shadow: var(--shadow-card);
+    transition: background-color 0.25s ease, border-color 0.25s ease;
+  }
+
+  /* ── Tabla ── */
+  .table-dark         { @apply w-full text-sm text-left; }
+  .table-dark thead tr { border-bottom: 1px solid var(--divider); }
+  .table-dark thead th {
+    @apply px-4 py-3 text-xs font-semibold uppercase tracking-wider;
+    color: var(--text-muted);
+  }
+  .table-dark tbody tr {
+    border-bottom: 1px solid var(--divider);
+    transition: background-color 0.15s;
+  }
+  .table-dark tbody tr:hover { background-color: var(--row-hover); }
+  .table-dark tbody td        { @apply px-4 py-3; color: var(--text-primary); }
+
+  /* ── Divisor glow ── */
+  .divider-glow {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(37,99,235,0.40), transparent);
   }
 }
