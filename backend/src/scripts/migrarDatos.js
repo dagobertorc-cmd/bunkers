@@ -85,7 +85,7 @@ async function main() {
         nombre: 'Bunker Matamoros', ciudad: 'Matamoros',
         tiendas: [
           { nombre: 'MTA Las Brisas',   numero: '2906', ciudad: 'Matamoros', fmt: 'MTA' },
-          { nombre: 'MTA Lauro Villar', numero: '2930', ciudad: 'Matamoros', fmt: 'MTA' },
+          { nombre: 'HEB Lauro Villar', numero: '2930', ciudad: 'Matamoros', fmt: 'HEB' },
           { nombre: 'HEB Matamoros',    numero: '2962', ciudad: 'Matamoros', fmt: 'HEB' },
         ],
       },

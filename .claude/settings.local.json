@@ -39,7 +39,15 @@
       "Bash(npx playwright *)",
       "Bash(npm init *)",
       "Bash(xargs ls -la)",
-      "Bash(wait)"
+      "Bash(wait)",
+      "Bash(lsof -ti:3001)",
+      "Bash(xargs kill -9)",
+      "Read(//tmp/**)",
+      "Bash(mysql -u root bunkers -e \"SELECT id, email, activo FROM usuarios WHERE email = 'admin@bunkers.local';\")",
+      "Bash(mysql -u root bunkers -e \"SELECT LEFT\\(password, 30\\) as hash_inicio FROM usuarios WHERE email = 'admin@bunkers.local';\")",
+      "Bash(mysql -u root bunkers -sN -e \"SELECT password FROM usuarios WHERE email = 'admin@bunkers.local';\")",
+      "Bash(mysql *)",
+      "Bash(xargs -I{} mysql -u root bunkers -e \"UPDATE usuarios SET password = '{}' WHERE email = 'admin@bunkers.local';\")"
     ]
   }
 }

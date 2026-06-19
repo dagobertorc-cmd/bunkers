@@ -18,7 +18,7 @@ INSERT INTO tipos_movimiento (nombre, descripcion) VALUES
 INSERT INTO bunkers (nombre, ciudad, responsable) VALUES
 ('Bunker Reynosa',      'Reynosa',      'Por asignar'),
 ('Bunker Matamoros',    'Matamoros',    'Por asignar'),
-('Bunker Nuevo Laredo', 'Nuevo Laredo', 'Por asignar'),
+('Bunker Laredo',      'Nuevo Laredo', 'Por asignar'),
 ('Bunker Tampico',      'Tampico',      'Por asignar');
 
 INSERT INTO tiendas (nombre, numero, ciudad, bunker_id) VALUES
