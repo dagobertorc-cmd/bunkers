@@ -16,8 +16,8 @@ const listar = async (req, res, next) => {
       LEFT JOIN usuarios u ON t.usuario_id = u.id
       ${cond}
       ORDER BY t.created_at DESC
-      LIMIT ? OFFSET ?
-    `, [...params, limit, offset]);
+      LIMIT ${limit} OFFSET ${offset}
+    `, params);
 
     const [[{ c }]] = await pool.execute(`SELECT COUNT(*) as c FROM tickets t ${cond}`, params);
     return ok(res, paginatedResponse(data, Number(c), page, limit));

@@ -137,8 +137,8 @@ const listar = async (filtros) => {
     LEFT JOIN tickets tk     ON m.ticket_id          = tk.id
     WHERE ${where}
     ORDER BY m.fecha_hora DESC
-    LIMIT ? OFFSET ?
-  `, [...params, limit, offset]);
+    LIMIT ${limit} OFFSET ${offset}
+  `, params);
 
   const [[{ c }]] = await pool.execute(`
     SELECT COUNT(*) as c FROM movimientos m

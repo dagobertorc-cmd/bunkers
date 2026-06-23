@@ -14,8 +14,8 @@ const listar = async (req, res, next) => {
       JOIN roles r ON u.rol_id = r.id
       LEFT JOIN bunkers b ON u.bunker_id = b.id
       ORDER BY u.nombre
-      LIMIT ? OFFSET ?
-    `, [limit, offset]);
+      LIMIT ${limit} OFFSET ${offset}
+    `, []);
     const [[{ c }]] = await pool.execute('SELECT COUNT(*) as c FROM usuarios');
     return ok(res, paginatedResponse(data, Number(c), page, limit));
   } catch (err) { next(err); }

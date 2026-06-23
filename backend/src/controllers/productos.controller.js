@@ -17,8 +17,8 @@ const listar = async (req, res, next) => {
       JOIN categorias_productos c ON p.categoria_id = c.id
       WHERE p.activo = 1 ${cond} ${search}
       ORDER BY p.nombre
-      LIMIT ? OFFSET ?
-    `, [...params, limit, offset]);
+      LIMIT ${limit} OFFSET ${offset}
+    `, params);
 
     const [[{ c }]] = await pool.execute(`
       SELECT COUNT(*) as c FROM productos p WHERE p.activo = 1 ${cond} ${search}
