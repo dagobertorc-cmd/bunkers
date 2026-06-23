@@ -47,7 +47,8 @@
       "Bash(mysql -u root bunkers -e \"SELECT LEFT\\(password, 30\\) as hash_inicio FROM usuarios WHERE email = 'admin@bunkers.local';\")",
       "Bash(mysql -u root bunkers -sN -e \"SELECT password FROM usuarios WHERE email = 'admin@bunkers.local';\")",
       "Bash(mysql *)",
-      "Bash(xargs -I{} mysql -u root bunkers -e \"UPDATE usuarios SET password = '{}' WHERE email = 'admin@bunkers.local';\")"
+      "Bash(xargs -I{} mysql -u root bunkers -e \"UPDATE usuarios SET password = '{}' WHERE email = 'admin@bunkers.local';\")",
+      "Bash(git *)"
     ]
   }
 }

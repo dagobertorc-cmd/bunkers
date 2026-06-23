@@ -4,3 +4,4 @@ dist/
 *.db
 uploads/evidencias/*
 !uploads/evidencias/.gitkeep
+.DS_Store

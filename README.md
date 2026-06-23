@@ -222,7 +222,7 @@ bunkers/
 │       ├── services/         # Llamadas a la API
 │       ├── store/            # Estado global (Zustand)
 │       └── utils/            # Constantes y formateadores
-├── inventory_by_bunker/      # Archivos Excel de inventario inicial por bunker
+├── inventory_by_bunker/      # Archivos Excel de inventario inicial (14 bunkers)
 ├── tiendas.xlsx              # Catálogo de tiendas
 └── package.json              # Scripts raíz (dev, build, install:all)
 ```
@@ -258,6 +258,41 @@ Ejecutados desde `backend/`:
 | `node src/scripts/initDB.js` | Inicializa la base de datos (esquema + datos iniciales) |
 | `node src/scripts/migrarDatos.js` | Aplica adiciones al esquema y carga datos reales (formatos, tiendas, usuarios) |
 | `node src/scripts/importarTodosBunkers.js` | Importa inventario desde los archivos Excel de `inventory_by_bunker/` |
+| `node src/scripts/importarReynosa.js` | Importa inventario específico del bunker Reynosa |
+| `node src/scripts/quitarCodigo.js` | Script de migración: elimina el índice `codigo` de la tabla de artículos |
+
+---
+
+## Despliegue en producción con PM2
+
+El proyecto incluye `backend/ecosystem.config.js` para gestionar el proceso del backend con **PM2**.
+
+### Instalar PM2
+
+```bash
+npm install -g pm2
+```
+
+### Iniciar el backend en producción
+
+```bash
+cd backend
+pm2 start ecosystem.config.js --env production
+```
+
+### Comandos útiles de PM2
+
+| Comando | Descripción |
+|---|---|
+| `pm2 list` | Muestra el estado de los procesos |
+| `pm2 logs bunkers-api` | Muestra los logs del backend |
+| `pm2 restart bunkers-api` | Reinicia el proceso |
+| `pm2 stop bunkers-api` | Detiene el proceso |
+| `pm2 startup` | Configura PM2 para iniciar al arranque del sistema |
+
+Los logs se guardan en `backend/logs/error.log` y `backend/logs/out.log`.
+
+> **Nota:** El frontend en producción debe compilarse con `npm run build` desde la raíz y servirse desde un servidor web como Nginx o Apache apuntando a `frontend/dist/`.
 
 ---
 
