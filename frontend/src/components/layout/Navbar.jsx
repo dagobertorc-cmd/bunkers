@@ -5,6 +5,7 @@ import { useUIStore } from '../../store/uiStore';
 import { useTheme } from '../../hooks/useTheme';
 import { logout } from '../../services/auth.service';
 import logo from '../../assets/logo_bunkers.png';
+import hebLogo from '../../assets/heb-logo.png';
 
 const ROLE_COLORS = {
   SUPERADMIN: 'bg-purple-900/60 text-purple-300 border border-purple-700/40',
@@ -68,6 +69,16 @@ export default function Navbar() {
             style={{ color: t.navText }}>
         Sistema de Gestión · Refacciones
       </span>
+
+      {/* Logo HEB centrado */}
+      <div className="absolute left-1/2 -translate-x-1/2 flex items-center pointer-events-none">
+        <img
+          src={hebLogo}
+          alt="H-E-B"
+          className="h-9 w-auto object-contain"
+          style={{ mixBlendMode: 'normal' }}
+        />
+      </div>
 
       <div className="flex-1" />
 
