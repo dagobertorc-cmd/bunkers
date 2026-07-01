@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { Download } from 'lucide-react';
 import ConsumoPorBunker   from '../components/dashboard/ConsumoPorBunker';
 import ProductosMasUsados from '../components/dashboard/ProductosMasUsados';
+import StockCritico       from '../components/dashboard/StockCritico';
 import Spinner from '../components/ui/Spinner';
 import { getConsumoPorBunker, getTopProductos } from '../services/dashboard.service';
 import { exportarInventario, exportarMovimientos, exportarStockCritico } from '../services/reportes.service';
+import { getCritico } from '../services/inventario.service';
 import { useTheme } from '../hooks/useTheme';
 
 function ExportButton({ label, onClick, loading }) {
@@ -29,6 +31,7 @@ function ExportButton({ label, onClick, loading }) {
 export default function Reportes() {
   const [consumo,  setConsumo]  = useState([]);
   const [top,      setTop]      = useState([]);
+  const [critico,  setCritico]  = useState([]);
   const [loading,  setLoading]  = useState(true);
   const [exporting, setExporting] = useState('');
 
@@ -36,6 +39,7 @@ export default function Reportes() {
     Promise.allSettled([
       getConsumoPorBunker().then(r => setConsumo(r.data.data || [])),
       getTopProductos(15).then(r => setTop(r.data.data || [])),
+      getCritico({}).then(r => setCritico(r.data.data || [])),
     ]).finally(() => setLoading(false));
   }, []);
 
@@ -72,6 +76,10 @@ export default function Reportes() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ConsumoPorBunker data={consumo} />
         <ProductosMasUsados data={top} />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <StockCritico data={critico} />
       </div>
     </div>
   );
