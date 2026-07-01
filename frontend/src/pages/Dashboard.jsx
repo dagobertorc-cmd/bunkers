@@ -25,9 +25,12 @@ export default function Dashboard() {
   const [top,       setTop]       = useState([]);
   const [loading,   setLoading]   = useState(true);
 
+  const fetchRecientes = () =>
+    getMovimientosRecientes(8).then(r => setRecientes(r.data.data || [])).catch(() => {});
+
   useEffect(() => {
     const requests = [
-      getMovimientosRecientes(8).then(r => setRecientes(r.data.data || [])),
+      fetchRecientes(),
       getCritico({}).then(r => setCritico(r.data.data || [])),
     ];
     if (isSupervisor) {
@@ -38,6 +41,16 @@ export default function Dashboard() {
       );
     }
     Promise.allSettled(requests).finally(() => setLoading(false));
+
+    const interval = setInterval(fetchRecientes, 60_000);
+    const onVisible = () => { if (document.visibilityState === 'visible') fetchRecientes(); };
+    document.addEventListener('visibilitychange', onVisible);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSupervisor]);
 
   const { t } = useTheme();
@@ -68,7 +81,7 @@ export default function Dashboard() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <MovimientosRecientes data={recientes} />
+        <MovimientosRecientes data={recientes} onRefresh={fetchRecientes} />
         <StockCritico data={critico} />
       </div>
 

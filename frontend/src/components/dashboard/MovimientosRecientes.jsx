@@ -1,13 +1,28 @@
+import { RefreshCw } from 'lucide-react';
 import Badge from '../ui/Badge';
 import { fmtDate } from '../../utils/formatters';
 
-export default function MovimientosRecientes({ data = [] }) {
+export default function MovimientosRecientes({ data = [], onRefresh }) {
   return (
     <div className="card">
-      <h3 className="font-semibold mb-4 text-sm uppercase tracking-wider"
-          style={{ color: 'var(--text-primary)' }}>
-        Movimientos Recientes
-      </h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-semibold text-sm uppercase tracking-wider"
+            style={{ color: 'var(--text-primary)' }}>
+          Movimientos Recientes
+        </h3>
+        {onRefresh && (
+          <button
+            onClick={onRefresh}
+            className="p-1 rounded transition-colors"
+            style={{ color: 'var(--text-faint)' }}
+            onMouseEnter={e => e.currentTarget.style.color = '#3b82f6'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-faint)'}
+            title="Actualizar"
+          >
+            <RefreshCw size={14} />
+          </button>
+        )}
+      </div>
       <div className="space-y-1">
         {data.map((m) => (
           <div
