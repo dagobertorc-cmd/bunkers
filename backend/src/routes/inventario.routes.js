@@ -6,6 +6,7 @@ router.use(verifyToken);
 router.get('/',        ctrl.listar);
 router.get('/critico', ctrl.critico);
 router.get('/crearh',  ctrl.creaerhInv);
+router.post('/',       requireRoles('SUPERADMIN','ADMIN'), ctrl.agregar);
 router.put('/:id',     requireRoles('SUPERADMIN','ADMIN'), ctrl.actualizar);
 
 module.exports = router;

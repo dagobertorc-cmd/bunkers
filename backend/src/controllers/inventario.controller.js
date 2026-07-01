@@ -40,4 +40,11 @@ const creaerhInv = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-module.exports = { listar, critico, actualizar, creaerhInv };
+const agregar = async (req, res, next) => {
+  try {
+    await inventarioService.agregar(req.body);
+    return ok(res, null, 'Producto agregado al inventario');
+  } catch (err) { next(err); }
+};
+
+module.exports = { listar, critico, actualizar, creaerhInv, agregar };

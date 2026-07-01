@@ -105,4 +105,18 @@ const crearh = async (filtros = {}) => {
   return paginatedResponse(data, Number(c), page, limit);
 };
 
-module.exports = { listar, critico, actualizar, crearh };
+const agregar = async ({ bunker_id, producto_id, cantidad, stock_minimo, stock_maximo, ubicacion }) => {
+  const pool = getDB();
+  await pool.execute(`
+    INSERT INTO inventario (bunker_id, producto_id, cantidad, stock_minimo, stock_maximo, ubicacion)
+    VALUES (?, ?, ?, ?, ?, ?)
+    ON DUPLICATE KEY UPDATE
+      cantidad     = VALUES(cantidad),
+      stock_minimo = VALUES(stock_minimo),
+      stock_maximo = VALUES(stock_maximo),
+      ubicacion    = VALUES(ubicacion),
+      updated_at   = CURRENT_TIMESTAMP
+  `, [bunker_id, producto_id, cantidad ?? 0, stock_minimo ?? 0, stock_maximo || null, ubicacion || null]);
+};
+
+module.exports = { listar, critico, actualizar, crearh, agregar };
